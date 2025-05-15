@@ -202,6 +202,8 @@ def train(
             if visualizer != None:
                 visualizer.render(
                     env.patches,
+                    #env.ph_pos1,
+                    #env.ph_pos2,
                     env.learners,
                     env.fov,
                     env.ph_fov
@@ -341,6 +343,8 @@ def eval(
             if visualizer != None:
                 visualizer.render(
                     env.patches,
+                    #env.ph_pos1,
+                    #env.ph_pos2,
                     env.learners,
                     env.fov,
                     env.ph_fov
