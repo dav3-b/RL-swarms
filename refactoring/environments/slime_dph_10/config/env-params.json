@@ -1,6 +1,6 @@
 {
-    "cluster_learners": 5,
-    "scatter_learners": 5,
+    "cluster_learners": 10,
+    "scatter_learners": 0,
     "actions": [
         "random-walk",
         "move-toward-chemical-0",

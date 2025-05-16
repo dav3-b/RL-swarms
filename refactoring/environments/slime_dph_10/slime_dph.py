@@ -184,6 +184,7 @@ class Slime(AECEnv):
         self.ph_pos1 = (self.coords[0][0] + self.patch_size * int(self.W * 1/4), self.coords[0][1] + self.patch_size * int(self.H * 1/4)) 
         self.ph_pos2 = (self.coords[0][0] + self.patch_size * int(self.W * 3/4), self.coords[0][1] + self.patch_size * int(self.H * 3/4)) 
         self.patches = self.lay_double_pheromone_gaussian(self.patches, self.ph_pos1, self.ph_pos2)
+        self.reward_patches = self._find_neighbours(3)
 
         self.agent_name_mapping = dict(
             zip(self.possible_agents, list(range(pop_tot)))
@@ -306,11 +307,23 @@ class Slime(AECEnv):
 
     def _get_reward(self):
         # Sorgente A
-        if self.learners[self.agent]['pos'] == self.ph_pos1 and self.learners[self.agent]['flags'] == [1, 0, 0]:
+        #if self.learners[self.agent]['pos'] == self.ph_pos1 and self.learners[self.agent]['flags'] == [1, 0, 0]:
+        #    reward = 1.0
+        #    self.learners[self.agent]['flags'][2] = 1
+        ## Sorgente B
+        #elif self.learners[self.agent]['pos'] == self.ph_pos2 and self.learners[self.agent]['flags'] == [1, 1, 1]:
+        #    reward = 100.0
+        #    self._reset_flags(self.agent)
+        #else:
+        #    reward = 0.0
+        
+        if self.learners[self.agent]['pos'] in self.reward_patches[self.ph_pos1] and self.learners[self.agent]['flags'] == [1, 0, 0]:
+            breakpoint()
             reward = 1.0
             self.learners[self.agent]['flags'][2] = 1
         # Sorgente B
-        elif self.learners[self.agent]['pos'] == self.ph_pos2 and self.learners[self.agent]['flags'] == [1, 1, 1]:
+        elif self.learners[self.agent]['pos'] in self.reward_patches[self.ph_pos2] and self.learners[self.agent]['flags'] == [1, 1, 1]:
+            breakpoint()
             reward = 100.0
             self._reset_flags(self.agent)
         else:
@@ -343,9 +356,15 @@ class Slime(AECEnv):
         return observations, cluster_ticks, rewards_cust
 
     def _check_pos(self, turtle):
-        if turtle['pos'] == self.ph_pos1 and turtle['flags'][0] == 0: 
+        #if turtle['pos'] == self.ph_pos1 and turtle['flags'][0] == 0: 
+        #    turtle['flags'][0] = 1
+        #elif turtle['pos'] == self.ph_pos2 and turtle['flags'][0] == 1: 
+        #    turtle['flags'][1] = 1
+        if turtle['pos'] in self.reward_patches[self.ph_pos1] and turtle['flags'][0] == 0: 
+            breakpoint()
             turtle['flags'][0] = 1
-        elif turtle['pos'] == self.ph_pos2 and turtle['flags'][0] == 1: 
+        elif turtle['pos'] in self.reward_patches[self.ph_pos2] and turtle['flags'][0] == 1: 
+            breakpoint()
             turtle['flags'][1] = 1
 
         return turtle
@@ -789,6 +808,7 @@ class SlimeVisualizer:
         patches,
         ph_pos1,
         ph_pos2,
+        reward_patches,
         learners,
         fov,
         ph_fov
@@ -827,12 +847,18 @@ class SlimeVisualizer:
                     self.patch_size
                 )
             )
-            if p == ph_pos1:
+            #if p == ph_pos1:
+            #    text = self.ph_pos_font.render('A', True, WHITE)
+            #    self.screen.blit(text, text.get_rect(center=ph_pos1))
+            #elif p == ph_pos2:
+            #    text = self.ph_pos_font.render('B', True, WHITE)
+            #    self.screen.blit(text, text.get_rect(center=ph_pos2))
+            if p in reward_patches[ph_pos1]:
                 text = self.ph_pos_font.render('A', True, WHITE)
-                self.screen.blit(text, text.get_rect(center=ph_pos1))
-            elif p == ph_pos2:
+                self.screen.blit(text, text.get_rect(center=p))
+            elif p in reward_patches[ph_pos2]:
                 text = self.ph_pos_font.render('B', True, WHITE)
-                self.screen.blit(text, text.get_rect(center=ph_pos2))
+                self.screen.blit(text, text.get_rect(center=p))
 
             if self.show_chem_text and (not sys.gettrace() is None or
                                         patches[p]['chemical_0'] >= self.sniff_threshold):  # if debugging show text everywhere, even 0
@@ -992,6 +1018,7 @@ def main():
                 env.patches,
                 env.ph_pos1,
                 env.ph_pos2,
+                env.reward_patches,
                 env.learners,
                 env.fov,
                 env.ph_fov
