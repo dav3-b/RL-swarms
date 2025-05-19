@@ -184,7 +184,7 @@ class Slime(AECEnv):
         self.ph_pos1 = (self.coords[0][0] + self.patch_size * int(self.W * 1/4), self.coords[0][1] + self.patch_size * int(self.H * 1/4)) 
         self.ph_pos2 = (self.coords[0][0] + self.patch_size * int(self.W * 3/4), self.coords[0][1] + self.patch_size * int(self.H * 3/4)) 
         self.patches = self.lay_double_pheromone_gaussian(self.patches, self.ph_pos1, self.ph_pos2)
-        self.reward_patches = self._find_neighbours(3)
+        self.reward_patches = self._find_neighbours(0)
 
         self.agent_name_mapping = dict(
             zip(self.possible_agents, list(range(pop_tot)))
@@ -330,6 +330,35 @@ class Slime(AECEnv):
             reward = 0.0
 
         return reward
+    
+    def distance_to_goal(self):
+        agent_pos = self.learners[self.agent]['pos']
+        
+        # Possibile normalizzazione -> per ora in pausa
+        #tmp_x = (self.H // 2) * self.patch_size
+        #tmp_y = (self.W // 2) * self.patch_size
+        #dist_max1 = np.round(np.sqrt(tmp_x**2 + tmp_y**2), 2)
+
+        if self.learners[self.agent]['flags'] == [0, 0, 0]:
+            #breakpoint()
+            x1 = agent_pos[0] - self.ph_pos1[0]
+            y1 = agent_pos[1] - self.ph_pos1[1]
+            x2, y2 = self._wrap((agent_pos[0] - self.ph_pos1[0]), (agent_pos[1] - self.ph_pos1[1]))
+            x = min(x1**2, x2**2)
+            y = min(y1**2, y2**2)
+            dist = round(np.sqrt(x + y) / self.patch_size, 3) # Scalo per la grandezza della patch
+            
+            #self.learners[self.agent]['flags'][2] = 1
+        elif self.learners[self.agent]['flags'] == [1, 0, 0]:
+            #breakpoint()
+            x1 = agent_pos[0] - self.ph_pos2[0]
+            y1 = agent_pos[1] - self.ph_pos2[1]
+            x2, y2 = self._wrap((agent_pos[0] - self.ph_pos2[0]), (agent_pos[1] - self.ph_pos2[1]))
+            x = min(x1**2, x2**2)
+            y = min(y1**2, y2**2)
+            dist = round(np.sqrt(x + y) / self.patch_size, 3) # Scalo per la grandezza della patch
+
+        return dist
 
     def _get_obs2(self, agent):
         f, _ = self._get_new_positions(self.ph_fov, agent)
@@ -344,8 +373,10 @@ class Slime(AECEnv):
         In this methods we compute the agent's reward and it's observation.
         """
 
-        reward = self._get_reward()
-        rewards_cust[self.agent].append(reward)
+        #reward = self._get_reward()
+        #rewards_cust[self.agent].append(reward)
+        reward = self.distance_to_goal()
+        rewards_cust[self.agent].append(-reward)
 
         if self.obs_type == "paper":
             observations = self._get_obs2(self.learners[self.agent])
@@ -362,10 +393,13 @@ class Slime(AECEnv):
         #    turtle['flags'][1] = 1
         if turtle['pos'] in self.reward_patches[self.ph_pos1] and turtle['flags'][0] == 0: 
             #breakpoint()
+            self.rewards_cust[self.agent].append(0.0)
             turtle['flags'][0] = 1
         elif turtle['pos'] in self.reward_patches[self.ph_pos2] and turtle['flags'][0] == 1: 
             #breakpoint()
-            turtle['flags'][1] = 1
+            self.rewards_cust[self.agent].append(0.0)
+            self._reset_flags(self.agent)
+            #turtle['flags'][1] = 1
 
         return turtle
 
@@ -588,6 +622,7 @@ class Slime(AECEnv):
             self.do_action6()
         else:
             raise ValueError("Action out of range!")
+
 
         if self._agent_selector.is_last():
             for ag in self.agents:
@@ -874,7 +909,7 @@ class SlimeVisualizer:
         for learner in learners.values():
             pygame.draw.circle(
                 self.screen,
-                RED if learner['flags'] == [1, 0, 1] else BLUE,
+                RED if learner['flags'] == [1, 0, 0] else BLUE,
                 #RED if learner["mode"] == 'c' else BLUE,
                 (learner['pos'][0], learner['pos'][1]),
                 self.turtle_size // 2
