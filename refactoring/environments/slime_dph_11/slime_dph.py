@@ -347,9 +347,19 @@ class Slime(AECEnv):
             x = min(x1**2, x2**2)
             y = min(y1**2, y2**2)
             dist = round(np.sqrt(x + y) / self.patch_size, 3) # Scalo per la grandezza della patch
-            
-            #self.learners[self.agent]['flags'][2] = 1
         elif self.learners[self.agent]['flags'] == [1, 0, 0]:
+            breakpoint()
+            #x1 = agent_pos[0] - self.ph_pos1[0]
+            #y1 = agent_pos[1] - self.ph_pos1[1]
+            #x2, y2 = self._wrap((agent_pos[0] - self.ph_pos1[0]), (agent_pos[1] - self.ph_pos1[1]))
+            #x = min(x1**2, x2**2)
+            #y = min(y1**2, y2**2)
+            #dist = round(np.sqrt(x + y) / self.patch_size, 3) # Scalo per la grandezza della patch
+
+            dist = -1.0
+            
+            self.learners[self.agent]['flags'][2] = 1
+        elif self.learners[self.agent]['flags'] == [1, 0, 1]:
             #breakpoint()
             x1 = agent_pos[0] - self.ph_pos2[0]
             y1 = agent_pos[1] - self.ph_pos2[1]
@@ -357,7 +367,18 @@ class Slime(AECEnv):
             x = min(x1**2, x2**2)
             y = min(y1**2, y2**2)
             dist = round(np.sqrt(x + y) / self.patch_size, 3) # Scalo per la grandezza della patch
+        elif self.learners[self.agent]['flags'] == [1, 1, 1]:
+            breakpoint()
+            #x1 = agent_pos[0] - self.ph_pos2[0]
+            #y1 = agent_pos[1] - self.ph_pos2[1]
+            #x2, y2 = self._wrap((agent_pos[0] - self.ph_pos2[0]), (agent_pos[1] - self.ph_pos2[1]))
+            #x = min(x1**2, x2**2)
+            #y = min(y1**2, y2**2)
+            #dist = round(np.sqrt(x + y) / self.patch_size, 3) # Scalo per la grandezza della patch
 
+            dist = -100.0
+
+            self._reset_flags(self.agent)
         return dist
 
     def _get_obs2(self, agent):
@@ -391,15 +412,14 @@ class Slime(AECEnv):
         #    turtle['flags'][0] = 1
         #elif turtle['pos'] == self.ph_pos2 and turtle['flags'][0] == 1: 
         #    turtle['flags'][1] = 1
-        if turtle['pos'] in self.reward_patches[self.ph_pos1] and turtle['flags'][0] == 0: 
+        if turtle['pos'] in self.reward_patches[self.ph_pos1] and turtle['flags'] == [0, 0, 0]: 
             #breakpoint()
-            self.rewards_cust[self.agent].append(0.0)
+            #self.rewards_cust[self.agent].append(0.0)
             turtle['flags'][0] = 1
-        elif turtle['pos'] in self.reward_patches[self.ph_pos2] and turtle['flags'][0] == 1: 
+        elif turtle['pos'] in self.reward_patches[self.ph_pos2] and turtle['flags'] == [1, 0, 1]: 
             #breakpoint()
-            self.rewards_cust[self.agent].append(0.0)
-            self._reset_flags(self.agent)
-            #turtle['flags'][1] = 1
+            #self.rewards_cust[self.agent].append(0.0)
+            turtle['flags'][1] = 1
 
         return turtle
 
@@ -786,8 +806,10 @@ import pygame
 
 BLACK = (0, 0, 0)
 BLUE = (0, 0, 255)
+SKY_BLUE = (0, 127, 255)
 WHITE = (255, 255, 255)
 RED = (190, 0, 0)
+PINK = (255, 20, 147)
 GREEN = (0, 190, 0)
 YELLOW = (250, 250, 0)
 
@@ -906,14 +928,20 @@ class SlimeVisualizer:
                 self.screen.blit(text, text.get_rect(center=p))
         
         # draw learners
-        for learner in learners.values():
+        for i, learner in enumerate(learners.values()):
             pygame.draw.circle(
                 self.screen,
-                RED if learner['flags'] == [1, 0, 0] else BLUE,
+                RED if learner['flags'] == [1, 0, 1] else BLUE,
                 #RED if learner["mode"] == 'c' else BLUE,
                 (learner['pos'][0], learner['pos'][1]),
                 self.turtle_size // 2
             )
+            if learner['flags'] == [1, 0, 1]:
+                text = self.cluster_font.render(str(i), True, SKY_BLUE)
+                self.screen.blit(text, text.get_rect(center=learner['pos']))
+            else:
+                text = self.cluster_font.render(str(i), True, PINK)
+                self.screen.blit(text, text.get_rect(center=learner['pos']))
 
             if self.show_dirs_view:
                 if len(fov[learner["pos"]].shape) > 2:
@@ -964,8 +992,7 @@ class SlimeVisualizer:
 
         for p in patches:
             if len(patches[p]['turtles']) > 1:
-                text = self.cluster_font.render(str(len(patches[p]['turtles'])), True,
-                                                RED if -1 in patches[p]['turtles'] else WHITE)
+                text = self.cluster_font.render(str(len(patches[p]['turtles'])), True, WHITE)
                 self.screen.blit(text, text.get_rect(center=p))
 
         self.clock.tick(self.fps)
@@ -1025,7 +1052,7 @@ def main():
       "PATCH_SIZE": 20,
       "TURTLE_SIZE": 16,
       "show_dirs_view": False,
-      "wiggle_patches": 3,
+      "wiggle_patches": 5,
       "show_ph_view": False
     }
 
@@ -1045,7 +1072,6 @@ def main():
         for tick in tqdm(range(params['episode_ticks']), desc="Tick", leave=False):
             for agent in env.agent_iter(max_iter=AGENTS_NUM):
                 observation, reward, _ , _, info = env.last(agent)
-                #breakpoint()
                 id = env.convert_observation(observation)
                 action = np.random.randint(0, ACTION_NUM)
                 env.step(action)
