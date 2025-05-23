@@ -181,10 +181,10 @@ class Slime(AECEnv):
 
         #self.REWARD_MAX = self.cluster_reward + (((self.cluster_learners - 1) / self.cluster_threshold) * (self.cluster_reward ** 2))
 
-        self.ph_pos1 = (self.coords[0][0] + self.patch_size * int(self.W * 1/4), self.coords[0][1] + self.patch_size * int(self.H * 1/4)) 
-        self.ph_pos2 = (self.coords[0][0] + self.patch_size * int(self.W * 3/4), self.coords[0][1] + self.patch_size * int(self.H * 3/4)) 
+        self.ph_pos1 = (self.coords[0][0] + self.patch_size * int(self.W * 1/4), self.coords[0][1] + self.patch_size * int(self.H * 1/2)) 
+        self.ph_pos2 = (self.coords[0][0] + self.patch_size * int(self.W * 3/4), self.coords[0][1] + self.patch_size * int(self.H * 1/2)) 
         self.patches = self.lay_double_pheromone_gaussian(self.patches, self.ph_pos1, self.ph_pos2)
-        self.reward_patches = self._find_neighbours(0)
+        self.reward_patches = self._find_neighbours(2)
 
         self.agent_name_mapping = dict(
             zip(self.possible_agents, list(range(pop_tot)))
@@ -276,6 +276,8 @@ class Slime(AECEnv):
         grid = np.zeros(self.W * self.H)
         grid[id1] = self.lay_amount
         grid[id2] = self.lay_amount
+        
+        #breakpoint()
         if self.diffuse_radius == 0:
             grid = gaussian_filter(grid.reshape((self.W, self.H)), sigma=self.diffuse_area, mode='wrap').flatten()
         else:
@@ -286,6 +288,20 @@ class Slime(AECEnv):
             idx2 = patches[p2]['id']
             patches[p1]['chemical_0'] = grid[idx1]
             patches[p2]['chemical_1'] = grid[idx2]
+        
+        #breakpoint()
+        
+        for i in range(1, 5):
+            for p in sorted(self.lay_patches[pos1])[-7:]:
+                x = i * 20
+                patches[(p[0] + x, p[1])]['chemical_0'] = patches[p]['chemical_0']
+        
+        for i in range(1, 5):
+            for p in sorted(self.lay_patches[pos1])[0:7]:
+                j = i * 20
+                x, y = self._wrap(p[0] - j, p[1])
+                patches[(x, y)]['chemical_0'] = patches[p]['chemical_0']
+
 
         return patches
     
@@ -394,10 +410,10 @@ class Slime(AECEnv):
         In this methods we compute the agent's reward and it's observation.
         """
 
-        #reward = self._get_reward()
-        #rewards_cust[self.agent].append(reward)
-        reward = self.distance_to_goal()
-        rewards_cust[self.agent].append(-reward)
+        reward = self._get_reward()
+        rewards_cust[self.agent].append(reward)
+        #reward = self.distance_to_goal()
+        #rewards_cust[self.agent].append(-reward)
 
         if self.obs_type == "paper":
             observations = self._get_obs2(self.learners[self.agent])
@@ -1018,12 +1034,12 @@ def main():
         ],
         "sniff_threshold": 0.9,
         "sniff_patches": 5, 
-        "diffuse_area": 3.0,
+        "diffuse_area": 2.0,
         "diffuse_radius": 5,
         "follow_mode": "det",
         #"follow_mode": "prob",
         "wiggle_patches": 5,
-        "lay_area": 5,
+        "lay_area": 3,
         "lay_amount": 700,
         "evaporation": 0.95,
         "cluster_threshold": 1,
@@ -1048,7 +1064,7 @@ def main():
       "SHOW_CHEM_TEXT": False,
       "CLUSTER_FONT_SIZE": 12,
       "CHEMICAL_FONT_SIZE": 8,
-      "sniff_threshold": 0.9,
+      "sniff_threshold": 0.0,
       "PATCH_SIZE": 20,
       "TURTLE_SIZE": 16,
       "show_dirs_view": False,
