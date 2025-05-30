@@ -181,10 +181,16 @@ class Slime(AECEnv):
 
         #self.REWARD_MAX = self.cluster_reward + (((self.cluster_learners - 1) / self.cluster_threshold) * (self.cluster_reward ** 2))
 
-        self.ph_pos1 = (self.coords[0][0] + self.patch_size * int(self.W * 1/4), self.coords[0][1] + self.patch_size * int(self.H * 1/2)) 
-        self.ph_pos2 = (self.coords[0][0] + self.patch_size * int(self.W * 3/4), self.coords[0][1] + self.patch_size * int(self.H * 1/2)) 
+        #self.ph_pos1 = (self.coords[0][0] + self.patch_size * int(self.W * 1/4), self.coords[0][1] + self.patch_size * int(self.H * 1/2)) 
+        #self.ph_pos2 = (self.coords[0][0] + self.patch_size * int(self.W * 3/4), self.coords[0][1] + self.patch_size * int(self.H * 1/2)) 
+        self.ph_pos1 = (90, 230)
+        self.ph_pos2 = (350, 230)
         self.patches = self.lay_double_pheromone_gaussian(self.patches, self.ph_pos1, self.ph_pos2)
-        self.reward_patches = self._find_neighbours(0)
+        self.reward_patches = self._find_neighbours(1)
+        #self.reward_patches = {
+        #    "chemical_0": ((70, 230), (90, 230), (110, 230)),
+        #    "chemical_1": ((330, 230))
+        #}
 
         self.agent_name_mapping = dict(
             zip(self.possible_agents, list(range(pop_tot)))
@@ -294,51 +300,49 @@ class Slime(AECEnv):
         #for i in range(1, 5):
         #    for p in sorted(self.lay_patches[pos1])[-7:]:
         #        x = i * 20
-        #        patches[(p[0] + x, p[1])]['chemical_0'] = patches[p]['chemical_0']
-        
+        #        patches[(p[0] + x, p[1])]['chemical_0'] = patches[p]['chemical_0'] * i
+ 
         #for i in range(1, 5):
         #    for p in sorted(self.lay_patches[pos1])[0:7]:
         #        j = i * 20
         #        x, y = self._wrap(p[0] - j, p[1])
         #        patches[(x, y)]['chemical_0'] = patches[p]['chemical_0']
         
-        chemical1 = [2.0, 4.0, 8.0, 16.0, 8.0, 4.0, 2.0]
-        chemical2 = [2.0, 4.0, 8.0, 16.0, 8.0, 4.0, 2.0]
+        chemical = 1.0
+        for i in range(5):
+            x = i * 20
+            chemical_0 = chemical + (.5 * i)
+            chemical_1 = chemical + (.5 * i)
+            patches[(210 - x, 70)]['chemical_0'] = chemical_0
+            patches[(210 - x, 90)]['chemical_0'] = chemical_0
+            patches[(210 - x, 110)]['chemical_0'] = chemical_0
+            patches[(230 + x, 350)]['chemical_1'] = chemical_1
+            patches[(230 + x, 370)]['chemical_1'] = chemical_1
+            patches[(230 + x, 390)]['chemical_1'] = chemical_1
         
-        for p in range(10, 270, 20):
-            if p != 110:
-                chemical2.append(chemical2.pop(0))
-                #random.shuffle(chemical2)
-            for i in range(7):
-                j = i * 20
-                if p == 110:
-                    patches[(p, 170 + j)]['chemical_0'] = chemical1[i]
-                else:
-                    patches[(p, 170 + j)]['chemical_0'] = chemical2[i]
-        
-        for p in range(410, 440, 20):
-            if p != 110:
-                chemical2.append(chemical2.pop(0))
-                #random.shuffle(chemical2)
-            for i in range(7):
-                j = i * 20
-                if p == 110:
-                    patches[(p, 170 + j)]['chemical_0'] = chemical1[i]
-                else:
-                    patches[(p, 170 + j)]['chemical_0'] = chemical2[i]
+        chemical = .5 + chemical_0
+        for i in range(17):
+            x = i * 20
+            chemical_0 = chemical + (.5 * i)
+            chemical_1 = chemical + (.5 * i)
+            patches[(70, 70 + x)]['chemical_0'] = chemical_0
+            patches[(90, 70 + x)]['chemical_0'] = chemical_0
+            patches[(110, 70 + x)]['chemical_0'] = chemical_0
+            patches[(330, 390 - x)]['chemical_1'] = chemical_1
+            patches[(350, 390 - x)]['chemical_1'] = chemical_1
+            patches[(370, 390 - x)]['chemical_1'] = chemical_1
 
-        for p in range(270, 410, 20):
-            if p != 330:
-                chemical2.append(chemical2.pop(0))
-                #random.shuffle(chemical2)
-            for i in range(7):
-                j = i * 20
-                if p == 330:
-                    patches[(p, 170 + j)]['chemical_1'] = chemical1[i]
-                else:
-                    patches[(p, 170 + j)]['chemical_1'] = chemical2[i]
-
-            #patches[(330, 170 + j)]['chemical_1'] = chemical[i]
+        chemical = .5 + chemical_0
+        for i in range(5):
+            x = i * 20
+            chemical_0 = chemical + (.5 * i)
+            chemical_1 = chemical + (.5 * i)
+            patches[(130 + x, 350)]['chemical_0'] = chemical_0
+            patches[(130 + x, 370)]['chemical_0'] = chemical_0
+            patches[(130 + x, 390)]['chemical_0'] = chemical_0
+            patches[(310 - x, 70)]['chemical_1'] = chemical_1
+            patches[(310 - x, 90)]['chemical_1'] = chemical_1
+            patches[(310 - x, 110)]['chemical_1'] = chemical_1
 
         return patches
     
@@ -742,8 +746,6 @@ class Slime(AECEnv):
         #for p in self.patches:
         #    self.patches[p]['chemical_0'] = 0.0
         #    self.patches[p]['chemical_1'] = 0.0
-
-        #self.patches = self.lay_double_pheromone_gaussian(self.patches, self.ph_pos1, self.ph_pos2)
         
         if self.obs_type == "paper":
             self.observations = {
@@ -1068,8 +1070,8 @@ def main():
             "random-walk",
             "move-toward-chemical-0",
             "move-toward-chemical-1",
-            "move-away-chemical-0",
-            "move-away-chemical-1"
+            #"move-away-chemical-0",
+            #"move-away-chemical-1"
         ],
         "sniff_threshold": 0.9,
         "sniff_patches": 5, 
