@@ -309,16 +309,16 @@ class Slime(AECEnv):
         #        patches[(x, y)]['chemical_0'] = patches[p]['chemical_0']
         
         chemical = 1.0
-        for i in range(13):
+        for i in range(10):
             x = i * 20
             chemical_0 = chemical + (.25 * i)
             #chemical_1 = chemical + (.5 * i)
             #patches[(210 - x, 70)]['chemical_0'] = chemical_0
             #patches[(210 - x, 90)]['chemical_0'] = chemical_0
             #patches[(210 - x, 110)]['chemical_0'] = chemical_0
-            patches[(370 - x, 70)]['chemical_0'] = chemical_0
-            patches[(370 - x, 90)]['chemical_0'] = chemical_0
-            patches[(370 - x, 110)]['chemical_0'] = chemical_0
+            patches[(310 - x, 70)]['chemical_0'] = chemical_0
+            patches[(310 - x, 90)]['chemical_0'] = chemical_0
+            patches[(310 - x, 110)]['chemical_0'] = chemical_0
         
         chemical = .25 + chemical_0
         for i in range(17):
@@ -329,7 +329,7 @@ class Slime(AECEnv):
             patches[(110, 70 + x)]['chemical_0'] = chemical_0
 
         chemical = .25 + chemical_0
-        for i in range(13):
+        for i in range(10):
             x = i * 20
             chemical_0 = chemical + (.25 * i)
             patches[(130 + x, 350)]['chemical_0'] = chemical_0
@@ -337,12 +337,29 @@ class Slime(AECEnv):
             patches[(130 + x, 390)]['chemical_0'] = chemical_0
         
         chemical = 1.0
+        for i in range(3):
+            x = i * 20
+            chemical_1 = chemical + (1.0 * i)
+            patches[(330 + x, 350)]['chemical_1'] = chemical_1
+            patches[(330 + x, 370)]['chemical_1'] = chemical_1
+            patches[(330 + x, 390)]['chemical_1'] = chemical_1
+
+        chemical = 1.0 + chemical_1
         for i in range(11):
             x = i * 20
             chemical_1 = chemical + (1.0 * i)
             patches[(330, 330 - x)]['chemical_1'] = chemical_1
             patches[(350, 330 - x)]['chemical_1'] = chemical_1
             patches[(370, 330 - x)]['chemical_1'] = chemical_1
+        
+        chemical = 1.0 + chemical_1
+        for i in range(3):
+            x = i * 20
+            chemical_1 = chemical + (1.0 * i)
+            patches[(370 - x, 70)]['chemical_1'] = chemical_1
+            patches[(370 - x, 90)]['chemical_1'] = chemical_1
+            patches[(370 - x, 110)]['chemical_1'] = chemical_1
+
 
         return patches
     
