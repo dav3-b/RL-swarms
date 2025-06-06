@@ -26,9 +26,9 @@ class Slime(AECEnv):
     def observations_n(self, same_obs=True):
         if same_obs:
             if isinstance(self.observation_space('0'), MultiBinary):
-                return self.observation_space('0').n
+                return self.observation_space('0').n + 1
             elif isinstance(self.observation_space('0'), Box):
-                return self.observation_space('0').shape[0]
+                return self.observation_space('0').shape[0] + 1
 
     def actions_n(self, same_actions=True):
         if same_actions:
@@ -763,14 +763,16 @@ class Slime(AECEnv):
         This method returns the conversion of the observation to an integer.
         It's useful for IQL.
         """
-
-        if self.obs_type == "paper":
-            if np.unique(obs).shape[0] == 1:
-                obs_id = np.random.randint(self.sniff_patches * 2)
-            else:
-                obs_id = obs.argmax() 
-        elif self.obs_type == "variation1":
-            pass
+        if not obs.any():
+            obs_id = 0
+        else:
+            if self.obs_type == "paper":
+                if np.unique(obs).shape[0] == 1:
+                    obs_id = np.random.randint(self.sniff_patches * 2) + 1
+                else:
+                    obs_id = obs.argmax() + 1
+            elif self.obs_type == "variation1":
+                pass
         
         return obs_id
     
