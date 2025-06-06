@@ -301,6 +301,7 @@ def eval(
     mixed_cluster_dict = {str(ep): 0.0 for ep in range(1, test_episodes + 1)}
     only_scatter_dict = {str(ep): 0.0 for ep in range(1, test_episodes + 1)}
     mixed_scatter_dict = {str(ep): 0.0 for ep in range(1, test_episodes + 1)}
+    actions = {str(agent): [] for agent in range(AGENTS_NUM)}
     
     print("Start testing...\n")
     
@@ -311,6 +312,7 @@ def eval(
                 state, reward, _, _, _ = env.last(agent)
                 s = env.convert_observation(state)
                 action = np.argmax(qtable[int(agent)][s])
+                #actions[agent].append(action)
                 
                 #if env.learners[int(agent)]["mode"] == 's':
                 #    env.step(scatter_actions[action].item())
@@ -383,6 +385,8 @@ def eval(
                 value.extend(list(itertools.chain(*tmp)))
             
             logger.load_value(value)
+        
+        breakpoint()
     
     logger.empty_table()
     env.close()

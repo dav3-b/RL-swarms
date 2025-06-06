@@ -879,7 +879,8 @@ class SlimeVisualizer:
     ):
         self.fps = kwargs['FPS']
         self.shade_strength = kwargs['SHADE_STRENGTH']
-        self.show_chem_text = kwargs['SHOW_CHEM_TEXT']
+        self.show_chem_text_ph_0 = kwargs['SHOW_CHEM_TEXT_PH_0']
+        self.show_chem_text_ph_1 = kwargs['SHOW_CHEM_TEXT_PH_1']
         self.cluster_font_size = kwargs['CLUSTER_FONT_SIZE']
         self.chemical_font_size = kwargs['CHEMICAL_FONT_SIZE']
         self.sniff_threshold = 0.0 #kwargs['sniff_threshold']
@@ -974,12 +975,12 @@ class SlimeVisualizer:
                 text = self.ph_pos_font.render('B', True, WHITE)
                 self.screen.blit(text, text.get_rect(center=p))
 
-            if self.show_chem_text and (not sys.gettrace() is None or
+            if self.show_chem_text_ph_0 and (not sys.gettrace() is None or
                                         patches[p]['chemical_0'] >= self.sniff_threshold):  # if debugging show text everywhere, even 0
                 text = self.chemical_font.render(str(round(patches[p]['chemical_0'], 1)), True, GREEN)
                 self.screen.blit(text, text.get_rect(center=p))
             
-            if self.show_chem_text and (not sys.gettrace() is None or
+            if self.show_chem_text_ph_1 and (not sys.gettrace() is None or
                                         patches[p]['chemical_1'] >= self.sniff_threshold):  # if debugging show text everywhere, even 0
                 text = self.chemical_font.render(str(round(patches[p]['chemical_1'], 1)), True, YELLOW)
                 self.screen.blit(text, text.get_rect(center=p))
@@ -1102,7 +1103,8 @@ def main():
     params_visualizer = {
       "FPS": 10,
       "SHADE_STRENGTH": 10,
-      "SHOW_CHEM_TEXT": False,
+      "SHOW_CHEM_TEXT_PH_0": False,
+      "SHOW_CHEM_TEXT_PH_1": False,
       "CLUSTER_FONT_SIZE": 12,
       "CHEMICAL_FONT_SIZE": 8,
       "sniff_threshold": 0.0,
@@ -1141,7 +1143,7 @@ def main():
                 env.fov,
                 env.ph_fov
             )
-            #breakpoint()
+            breakpoint()
         avg_cluster = env.avg_cluster()
 
     print("Total time = ", time.time() - start_time)
