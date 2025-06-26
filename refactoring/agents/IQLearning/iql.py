@@ -386,7 +386,7 @@ def eval(
             
             logger.load_value(value)
         
-        breakpoint()
+        #breakpoint()
     
     logger.empty_table()
     env.close()
