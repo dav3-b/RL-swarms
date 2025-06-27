@@ -13,7 +13,7 @@ from pettingzoo import AECEnv
 from pettingzoo.utils import agent_selector
 from pettingzoo.utils.env import ObsType
 
-class Slime(AECEnv):
+class Ants(AECEnv):
     def observe(self, agent: str) -> ObsType:
         return np.array(self.observations[agent])
 
@@ -75,8 +75,7 @@ class Slime(AECEnv):
         np.random.seed(seed)
         random.seed(seed)
         
-        self.cluster_learners = kwargs['cluster_learners'] 
-        self.scatter_learners = kwargs['scatter_learners'] 
+        self.num_learners = kwargs['learners'] 
         self.sniff_threshold = kwargs['sniff_threshold']
         self.diffuse_area = kwargs['diffuse_area']
         self.diffuse_radius = kwargs['diffuse_radius']
@@ -119,8 +118,7 @@ class Slime(AECEnv):
             for y in range(self.offset, (self.H_pixels - self.offset) + 1, self.patch_size):
                 self.coords.append((x, y))  # "centre" of the patch or turtle (also ID of the patch)
 
-        pop_tot = self.cluster_learners + self.scatter_learners
-        self.possible_agents = [str(i) for i in range(pop_tot)]  # DOC learning agents IDs
+        self.possible_agents = [str(i) for i in range(self.num_learners)]  # DOC learning agents IDs
         self._agent_selector = agent_selector(self.possible_agents)
         self.agent = self._agent_selector.reset()
 
@@ -166,7 +164,7 @@ class Slime(AECEnv):
             }
         elif self.obs_type == "variation1":
             pass
-
+    
         #self.REWARD_MAX = self.cluster_reward + (((self.cluster_learners - 1) / self.cluster_threshold) * (self.cluster_reward ** 2))
 
         #self.ph_pos1 = (self.coords[0][0] + self.patch_size * int(self.W * 1/4), self.coords[0][1] + self.patch_size * int(self.H * 1/2)) 
@@ -176,24 +174,29 @@ class Slime(AECEnv):
         self.food_pos_1 = (self.coords[0][0] + self.patch_size * int(self.W * 1/6), self.coords[0][1] + self.patch_size * int(self.H * 1/6)) 
         self.food_pos_2 = (self.coords[0][0] + self.patch_size * int(self.W * 1/2), self.coords[0][1] + self.patch_size * int(self.H * 7/8)) 
         self.food_pos_3 = (self.coords[0][0] + self.patch_size * int(self.W * 5/6), self.coords[0][1] + self.patch_size * int(self.H * 1/6)) 
+        self.food_quantity = 3
         #self.nest_pos = (self.coords[0][0] + self.patch_size * int(self.W * 3/4), self.coords[0][1] + self.patch_size * int(self.H * 3/4)) 
         self.nest_pos = (self.coords[0][0] + self.patch_size * int(self.W * 1/2), self.coords[0][1] + self.patch_size * int(self.H * 1/2)) 
+        
+        self.possible_states = self.sniff_patches**2 * 2**2
+        self.map_matrix = np.array(
+            [i for i in range(0, self.possible_states, 4)]
+        ).reshape(self.sniff_patches, self.sniff_patches)
         
         # create learners turtle
         self.learners = {
             i: {
                 'pos': self.nest_pos,
                 'dir': np.random.randint(self.N_DIRS), 
-                'mode': 'c' if i < self.cluster_learners else 's',
                 'flags': [0, 0, 0] 
             }
-            for i in range(self.cluster_learners + self.scatter_learners)
+            for i in range(self.num_learners)
         }
         for l in self.learners:
             self.patches[self.learners[l]['pos']]['turtles'].append(l)  # DOC id of learner turtles
 
         self.agent_name_mapping = dict(
-            zip(self.possible_agents, list(range(pop_tot)))
+            zip(self.possible_agents, list(range(self.num_learners)))
         )
 
     def _field_of_view(self, n_patches):
@@ -326,24 +329,30 @@ class Slime(AECEnv):
             #breakpoint()
             reward = 1.0
             self.learners[self.agent]['flags'][2] = 1
-            #self.reward_patches[self.food_pos_1].remove(self.learners[self.agent]['pos'])
+            self.food_counts[self.learners[self.agent]['pos']] -= 1
+            if self.food_counts[self.learners[self.agent]['pos']] == 0:
+                self.reward_patches[self.food_pos_1].remove(self.learners[self.agent]['pos'])
         elif self.learners[self.agent]['pos'] in self.reward_patches[self.food_pos_2] and self.learners[self.agent]['flags'] == [1, 0, 0]:
             #breakpoint()
             reward = 1.0
             self.learners[self.agent]['flags'][2] = 1
-            #self.reward_patches[self.food_pos_2].remove(self.learners[self.agent]['pos'])
+            self.food_counts[self.learners[self.agent]['pos']] -= 1
+            if self.food_counts[self.learners[self.agent]['pos']] == 0:
+                self.reward_patches[self.food_pos_2].remove(self.learners[self.agent]['pos'])
         elif self.learners[self.agent]['pos'] in self.reward_patches[self.food_pos_3] and self.learners[self.agent]['flags'] == [1, 0, 0]:
             #breakpoint()
             reward = 1.0
             self.learners[self.agent]['flags'][2] = 1
-            #self.reward_patches[self.food_pos_3].remove(self.learners[self.agent]['pos'])
+            self.food_counts[self.learners[self.agent]['pos']] -= 1
+            if self.food_counts[self.learners[self.agent]['pos']] == 0:
+                self.reward_patches[self.food_pos_3].remove(self.learners[self.agent]['pos'])
         # Sorgente B
         elif self.learners[self.agent]['pos'] in self.reward_patches[self.nest_pos] and self.learners[self.agent]['flags'] == [1, 1, 1]:
             #breakpoint()
-            reward = 100.0
+            reward = 10.0
             self._reset_flags(self.agent)
         else:
-            reward = 0.0
+            reward = -0.1
 
         return reward
     
@@ -403,17 +412,31 @@ class Slime(AECEnv):
         obs_ph_0 = [self.patches[tuple(i)]["chemical_0"] for i in f]
         obs_ph_1 = [self.patches[tuple(i)]["chemical_1"] for i in f]
         obs = obs_ph_0 + obs_ph_1
+        obs.extend([0, 0])
         
-        if agent['pos'] in self.reward_patches[self.food_pos_1]:
-            obs.extend([1, 0])
-        elif agent['pos'] in self.reward_patches[self.food_pos_2]:
-            obs.extend([1, 0])
-        elif agent['pos'] in self.reward_patches[self.food_pos_3]:
-            obs.extend([1, 0])
-        elif agent['pos'] in self.reward_patches[self.nest_pos]:
-            obs.extend([0, 1])
-        else:
-            obs.extend([0, 0])
+        #if agent['pos'] in self.reward_patches[self.food_pos_1]:
+        #    obs.extend([1, 0])
+        #elif agent['pos'] in self.reward_patches[self.food_pos_2]:
+        #    obs.extend([1, 0])
+        #elif agent['pos'] in self.reward_patches[self.food_pos_3]:
+        #    obs.extend([1, 0])
+        #elif agent['pos'] in self.reward_patches[self.nest_pos]:
+        #    obs.extend([0, 1])
+        #else:
+        #    obs.extend([0, 0])
+        
+        #if agent['flags'] == [1, 0, 1] or agent['flags'] == [1, 0, 0]:
+        #    obs[-2] = 1
+        #elif agent['flags'] == [1, 1, 1]:
+        #    obs.extend([0, 1])
+        #else:
+        #    obs.extend([0, 0])
+        
+        if agent['flags'] != [0, 0, 0]:
+            obs[-2] = 1
+
+        if agent['pos'] in self.reward_patches[self.nest_pos]:
+            obs[-1] = 1 
 
         return np.array(obs)
     
@@ -421,17 +444,19 @@ class Slime(AECEnv):
         """
         In this methods we compute the agent's reward and it's observation.
         """
+        if self.obs_type == "paper":
+            observations = self._get_obs2(self.learners[self.agent])
+        elif self.obs_type == "variation1":
+            observations = self._get_obs3(self.learners[self.agent])
 
         reward = self._get_reward()
         rewards_cust[self.agent].append(reward)
         #reward = self.distance_to_goal()
         #rewards_cust[self.agent].append(-reward)
 
-        if self.obs_type == "paper":
-            observations = self._get_obs2(self.learners[self.agent])
-        elif self.obs_type == "variation1":
-            observations = self._get_obs3(self.learners[self.agent])
 
+        #if reward == 100:
+        #    self._reset_flags(self.agent)
         #breakpoint()
         return observations, cluster_ticks, rewards_cust
 
@@ -539,7 +564,7 @@ class Slime(AECEnv):
         
         return patches
 
-    def do_action3(self):
+    def do_action1(self):
         if self.obs_type == "paper":
             max_pheromone, max_coords, max_ph_dir = self._find_max_pheromone2(
                 self.learners[self.agent],
@@ -557,7 +582,25 @@ class Slime(AECEnv):
         elif self.obs_type == "variation1":
             pass
     
-    def do_action4(self):
+    def do_action2(self):
+        if self.obs_type == "paper":
+            max_pheromone, max_coords, max_ph_dir = self._find_max_pheromone2(
+                self.learners[self.agent],
+                self.observations[str(self.agent)][self.sniff_patches:]        
+            )
+            if max_pheromone >= self.sniff_threshold:
+                self.patches, self.learners[self.agent] = self._follow_pheromone2(
+                    self.patches,
+                    max_coords,
+                    max_ph_dir,
+                    self.learners[self.agent]
+                )
+            else:
+                self.do_action0()
+        elif self.obs_type == "variation1":
+            pass
+    
+    def do_action3(self):
         if self.obs_type == "paper":
             max_pheromone, max_coords, max_ph_dir = self._find_max_pheromone2(
                 self.learners[self.agent],
@@ -608,25 +651,25 @@ class Slime(AECEnv):
         
         return patches, turtle
 
-    def do_action5(self):
-        if np.any(self.observations[str(self.agent)] >= self.sniff_threshold):
-            if self.obs_type == "paper":
-                ph_pos, ph_dir = self._find_non_max_pheromone(
-                    self.learners[self.agent], 
-                    self.observations[str(self.agent)][:self.sniff_patches]        
-                )
-                self.patches, self.learners[self.agent] = self._avoid_pheromone(
-                    self.patches,
-                    ph_pos,
-                    ph_dir,
-                    self.learners[self.agent]
-                )
-            elif self.obs_type == "variation1":
-                pass
-        else:
-            self.do_action0()
+    #def do_action4(self):
+    #    if np.any(self.observations[str(self.agent)] >= self.sniff_threshold):
+    #        if self.obs_type == "paper":
+    #            ph_pos, ph_dir = self._find_non_max_pheromone(
+    #                self.learners[self.agent], 
+    #                self.observations[str(self.agent)][:self.sniff_patches]        
+    #            )
+    #            self.patches, self.learners[self.agent] = self._avoid_pheromone(
+    #                self.patches,
+    #                ph_pos,
+    #                ph_dir,
+    #                self.learners[self.agent]
+    #            )
+    #        elif self.obs_type == "variation1":
+    #            pass
+    #    else:
+    #        self.do_action0()
     
-    def do_action6(self):
+    def do_action4(self):
         if np.any(self.observations[str(self.agent)] >= self.sniff_threshold):
             if self.obs_type == "paper":
                 ph_pos, ph_dir = self._find_non_max_pheromone(
@@ -710,13 +753,13 @@ class Slime(AECEnv):
         if action == 0:     # Random walk
             self.do_action0()   
         elif action == 1:   # Follow pheromone 0
-            self.do_action3()
+            self.do_action1()
         elif action == 2:   # Follow pheromone 1
-            self.do_action4()
-        elif action == 3:   # Avoid pheromone 0
-            self.do_action5()
+            self.do_action2()
+        elif action == 3:   # Follow pheromone 1 and drop pheromone 0
+            self.do_action3()
         elif action == 4:   # Avoid pheromone 1
-            self.do_action6()
+            self.do_action4()
         else:
             raise ValueError("Action out of range!")
 
@@ -745,10 +788,9 @@ class Slime(AECEnv):
         Reset env.
         """
         # empty stuff
-        pop_tot = self.cluster_learners + self.scatter_learners
         #Different from AECEnv attribute self.rewards - only keeps last step rewards
-        self.rewards_cust = {i: [] for i in range(pop_tot)}
-        self.cluster_ticks = {i: 0 for i in range(pop_tot)}
+        self.rewards_cust = {i: [] for i in range(self.num_learners)}
+        self.cluster_ticks = {i: 0 for i in range(self.num_learners)}
         
         #Initialize attributes for PettingZoo Env
         self.agents = self.possible_agents[:]
@@ -774,6 +816,12 @@ class Slime(AECEnv):
         self.no_food = False
         self.done = False
 
+        food_pos = []
+        food_pos.extend(self.reward_patches[self.food_pos_1])
+        food_pos.extend(self.reward_patches[self.food_pos_2])
+        food_pos.extend(self.reward_patches[self.food_pos_3])
+        self.food_counts = {p: self.food_quantity for p in food_pos}
+
         # patches-own [chemical] - amount of pheromone in the patch
         for p in self.patches:
             self.patches[p]['chemical_0'] = 0.0
@@ -796,103 +844,36 @@ class Slime(AECEnv):
         This method returns the conversion of the observation to an integer.
         It's useful for IQL.
         """
-        if not obs.any():
-            obs_id = 0
+        #if not obs.any():
+        #    obs_id = 0
+        #else:
+        #    if self.obs_type == "paper":
+        #        if np.unique(obs).shape[0] == 1:
+        #            obs_id = np.random.randint(self.sniff_patches * 2) + 1
+        #        else:
+        #            obs_id = obs.argmax() + 1
+        #    elif self.obs_type == "variation1":
+        #        pass
+
+        obs_ph_0 = obs[:self.sniff_patches]
+        obs_ph_1 = obs[self.sniff_patches:self.sniff_patches * 2]
+        food = int(obs[-2])
+        nest = int(obs[-1])
+        
+        if np.unique(obs_ph_0).shape[0] == 1:
+            obs_ph_0_id = np.random.randint(self.sniff_patches)
         else:
-            if self.obs_type == "paper":
-                if np.unique(obs).shape[0] == 1:
-                    obs_id = np.random.randint(self.sniff_patches * 2) + 1
-                else:
-                    obs_id = obs.argmax() + 1
-            elif self.obs_type == "variation1":
-                pass
+            obs_ph_0_id  = obs_ph_0.argmax()
+        
+        if np.unique(obs_ph_1).shape[0] == 1:
+            obs_ph_1_id = np.random.randint(self.sniff_patches)
+        else:
+            obs_ph_1_id  = obs_ph_1.argmax()
+
+        obs_id = self.map_matrix[obs_ph_0_id, obs_ph_1_id] + (food * 2) + nest
         
         return obs_id
     
-    def _compute_avg_cluster(self, clusters):
-        cluster_sum = 0
-        for cluster in clusters:
-            cluster_sum += len(cluster)
-
-        return cluster_sum / len(clusters)
-
-    def _get_double_agent_clusters(self, clusters):
-        only_cluster = []
-        only_scatter = []
-        mixed_cluster = []
-        mixed_scatter = []
-        
-        for cluster in clusters:
-            tmp_cluster = []
-            tmp_scatter = []
-            counter_cluster = True 
-            counter_scatter = True 
-            
-            for c in cluster:
-                if self.learners[c]["mode"] == 'c':
-                    tmp_cluster.append(c)
-                    
-                    if counter_cluster:
-                        mixed_cluster.append(cluster)
-                        counter_cluster = False
-                elif self.learners[c]["mode"] == 's':
-                    tmp_scatter.append(c)
-                    
-                    if counter_scatter:
-                        mixed_scatter.append(cluster)
-                        counter_scatter = False
-            if len(tmp_cluster) > 0:
-                only_cluster.append(tmp_cluster)
-            
-            if len(tmp_scatter) > 0:
-                only_scatter.append(tmp_scatter)
-        
-        return only_cluster, mixed_cluster, only_scatter, mixed_scatter
-
-    def avg_cluster(self):
-        """
-        Same compuation as avg_cluster.
-        Use THIS for calculating the average, avg_cluster has a bug!
-        """
-        cluster_sizes = []  # registra la dim. dei cluster
-        for l in self.learners:
-            cluster = []  # tiene conto di quali turtle sono in quel cluster
-            for p in self.cluster_patches[self.learners[l]['pos']]:
-                for t in self.patches[p]['turtles']:
-                    cluster.append(t)
-            #cluster.sort()
-            if cluster not in cluster_sizes:
-                cluster_sizes.append(cluster)
-        
-        cs = cluster_sizes.copy()
-        for i in range(len(cluster_sizes)):
-            for j in range(i + 1, len(cluster_sizes)):
-                set1 = set(cluster_sizes[j])
-                set2 = set(cluster_sizes[i])
-                if set1.issubset(set2) and cluster_sizes[j] in cs:
-                    cs.remove(cluster_sizes[j])
-                elif set2.issubset(set1) and cluster_sizes[i] in cs:
-                    cs.remove(cluster_sizes[i])
-        
-        # calcolo avg_cluster_size
-        if self.cluster_learners == 0 or self.scatter_learners == 0:
-            avg_cluster_size = self._compute_avg_cluster(cs)
-            
-            return avg_cluster_size
-        else:
-            (
-                only_cluster,
-                mixed_cluster,
-                only_scatter,
-                mixed_scatter
-            ) = self._get_double_agent_clusters(cs)
-            avg_only_cluster = self._compute_avg_cluster(only_cluster)
-            avg_mixed_cluster = self._compute_avg_cluster(mixed_cluster)
-            avg_only_scatter = self._compute_avg_cluster(only_scatter)
-            avg_mixed_scatter = self._compute_avg_cluster(mixed_scatter)
-
-            return avg_only_cluster, avg_mixed_cluster, avg_only_scatter, avg_mixed_scatter
-
 
 import pygame
 
@@ -905,7 +886,7 @@ PINK = (255, 20, 147)
 GREEN = (0, 190, 0)
 YELLOW = (250, 250, 0)
 
-class SlimeVisualizer:
+class AntsVisualizer:
     def __init__(
         self,
         W_pixels,
@@ -1033,7 +1014,6 @@ class SlimeVisualizer:
             pygame.draw.circle(
                 self.screen,
                 RED if learner['flags'] == [1, 0, 1] else BLUE,
-                #RED if learner["mode"] == 'c' else BLUE,
                 (learner['pos'][0], learner['pos'][1]),
                 self.turtle_size // 2
             )
@@ -1107,45 +1087,14 @@ class SlimeVisualizer:
             pygame.quit()
 
 def policy(agent, turtle, obs, th):
-    #if np.all(obs[:-2] < th):
-    #    return 0
-    #else:
-    #    if agent['flags'] == [1, 0, 1]:
-    #        return 2
-    #    else:
-    #        return 4
-    #if np.all(obs[:-2] < th):
-    #    return 0
-    #else:
-    #    if turtle['flags'] == [1, 0, 1]:
-    #        return 2
-    #    elif turtle['flags'] == [0, 0, 0] and np.any(obs[:3] >= th) and obs[-1] == 0.0:
-    #        breakpoint()
-    #        return 1
-    #    else:
-    #        return 0
-    #if turtle['flags'] == [1, 0, 1]:
-    #    return 2
-    #else:
-    #    return 1
-    #elif turtle['flags'] == [0, 0, 0] and np.any(obs[:3] >= th) and obs[-1] == 0.0:
-    #    return 1
-    #else:
-    #    return 0
-    if turtle['flags'] == [1, 0, 1]:
-        return 2
-    #elif turtle['flags'] == [0, 0, 0] and np.any(obs[:3] >= th) and obs[-1] == 0.0:
-    ##    #breakpoint()
-    #    return 1
-    #else:
-    #    return 0
+    if turtle['flags'] == [1, 0, 0] or turtle['flags'] == [1, 0, 1]:
+        return 3
     else:
         return 1
-
+    
 def main():
     params = {
-        "cluster_learners": 10,
-        "scatter_learners": 10,
+        "learners": 20,
         "actions": [
             "random-walk",
             "move-toward-chemical-0",
@@ -1154,12 +1103,12 @@ def main():
             #"move-away-chemical-1"
         ],
         "sniff_threshold": 0.9,
-        "sniff_patches": 5, 
+        "sniff_patches": 3, 
         "diffuse_area": 0.5,
         "diffuse_radius": 0,
         "follow_mode": "det",
         #"follow_mode": "prob",
-        "wiggle_patches": 5,
+        "wiggle_patches": 3,
         "lay_area": 1,
         "lay_amount": 3.0,
         "evaporation": 0.95,
@@ -1196,20 +1145,22 @@ def main():
 
     from tqdm import tqdm
 
-    EPISODES = 1
+    EPISODES = 500
     SEED = 0
     np.random.seed(SEED)
-    env = Slime(SEED, **params)
-    env_vis = SlimeVisualizer(env.W_pixels, env.H_pixels, **params_visualizer)
+    env = Ants(SEED, **params)
+    env_vis = AntsVisualizer(env.W_pixels, env.H_pixels, **params_visualizer)
     ACTION_NUM = len(params["actions"])
-    AGENTS_NUM = env.cluster_learners + env.scatter_learners
+    AGENTS_NUM = env.num_learners 
 
     actions = (0, 2, 4)
-    ticks = 0
+
+    ticks = []
 
     start_time = time.time()
     for ep in tqdm(range(1, EPISODES + 1), desc="Episode"):
         env.reset()
+        tick = 1
         #for tick in tqdm(range(params['episode_ticks']), desc="Tick", leave=False):
         while not env.done: 
             for agent in env.agent_iter(max_iter=AGENTS_NUM):
@@ -1221,32 +1172,25 @@ def main():
                 #action = random.choice(actions)
                 action = policy(agent, env.learners[int(agent)], observation, env.sniff_threshold)
                 env.step(action)
-            env_vis.render(
-                env.patches,
-                env.food_pos_1,
-                env.food_pos_2,
-                env.food_pos_3,
-                env.nest_pos,
-                env.reward_patches,
-                env.learners,
-                env.fov,
-                env.ph_fov
-            )
-            ticks += 1
+            #env_vis.render(
+            #    env.patches,
+            #    env.food_pos_1,
+            #    env.food_pos_2,
+            #    env.food_pos_3,
+            #    env.nest_pos,
+            #    env.reward_patches,
+            #    env.learners,
+            #    env.fov,
+            #    env.ph_fov
+            #)
+            tick += 1
             #breakpoint()
         #avg_cluster = env.avg_cluster()
+        ticks.append(tick)
 
     print("Total time = ", time.time() - start_time)
-    print("Ticks: ", ticks)
+    print("Avg Ticks: ", np.array(ticks).mean())
     env.close()
 
 if __name__ == "__main__":
     main()
-
-
-"""
-Policy
-    - Se non c'è ph_0 -> allontanati da ph_1 (sia per il nido che non)
-    - Se c'è ph_0 -> segui ph_0 (sia per il nido che non)
-    - Se sei al cibo -> segui ph_1 e rilascia ph_0
-"""
