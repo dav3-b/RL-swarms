@@ -83,15 +83,11 @@ class Ants(AECEnv):
         self.lay_amount = kwargs['lay_amount']
         self.evaporation = kwargs['evaporation']
         self.follow_mode = kwargs['follow_mode']
-        self.cluster_threshold = kwargs['cluster_threshold']
-        self.cluster_radius = kwargs['cluster_radius']
-        self.normalize_rewards = kwargs['normalize_rewards']
         self.episode_ticks = kwargs['episode_ticks']
     
-        self.cluster_reward = kwargs['cluster_rew']
-        self.cluster_penalty = kwargs['cluster_penalty']
-        self.scatter_reward = kwargs['scatter_rew']
-        self.scatter_penalty = kwargs['scatter_penalty']
+        self.food_reward = kwargs['food_reward']
+        self.nest_reward = kwargs['nest_reward']
+        self.penalty = kwargs['penalty']
 
         self.W = kwargs['W']
         self.H = kwargs['H']
@@ -138,9 +134,6 @@ class Ants(AECEnv):
         # DOC {(x,y): [(x,y), ..., (x,y)]} pre-computed lay area for each patch, including itself
         self.lay_patches = self._find_neighbours(self.lay_area)
         
-        # DOC {(x,y): [(x,y), ..., (x,y)]} pre-computed cluster-check for each patch, including itself
-        self.cluster_patches = self._find_neighbours(self.cluster_radius)
-
         # Agent's field of view
         self.fov = self._field_of_view(self.wiggle_patches)
         # Agent's pheromone field of view
@@ -327,34 +320,35 @@ class Ants(AECEnv):
         
         if self.learners[self.agent]['pos'] in self.reward_patches[self.food_pos_1] and self.learners[self.agent]['flags'] == [1, 0, 0]:
             #breakpoint()
-            reward = 1.0
             self.learners[self.agent]['flags'][2] = 1
             self.food_counts[self.learners[self.agent]['pos']] -= 1
             if self.food_counts[self.learners[self.agent]['pos']] == 0:
                 self.reward_patches[self.food_pos_1].remove(self.learners[self.agent]['pos'])
+            
+            return self.food_reward
         elif self.learners[self.agent]['pos'] in self.reward_patches[self.food_pos_2] and self.learners[self.agent]['flags'] == [1, 0, 0]:
             #breakpoint()
-            reward = 1.0
             self.learners[self.agent]['flags'][2] = 1
             self.food_counts[self.learners[self.agent]['pos']] -= 1
             if self.food_counts[self.learners[self.agent]['pos']] == 0:
                 self.reward_patches[self.food_pos_2].remove(self.learners[self.agent]['pos'])
+            
+            return self.food_reward
         elif self.learners[self.agent]['pos'] in self.reward_patches[self.food_pos_3] and self.learners[self.agent]['flags'] == [1, 0, 0]:
             #breakpoint()
-            reward = 1.0
             self.learners[self.agent]['flags'][2] = 1
             self.food_counts[self.learners[self.agent]['pos']] -= 1
             if self.food_counts[self.learners[self.agent]['pos']] == 0:
                 self.reward_patches[self.food_pos_3].remove(self.learners[self.agent]['pos'])
+
+            return self.food_reward
         # Sorgente B
         elif self.learners[self.agent]['pos'] in self.reward_patches[self.nest_pos] and self.learners[self.agent]['flags'] == [1, 1, 1]:
             #breakpoint()
-            reward = 10.0
             self._reset_flags(self.agent)
+            return self.nest_reward
         else:
-            reward = -0.1
-
-        return reward
+            return self.penalty
     
     def distance_to_goal(self):
         agent_pos = self.learners[self.agent]['pos']
@@ -1088,7 +1082,7 @@ class AntsVisualizer:
 
 def main():
     params = {
-        "learners": 20,
+        "learners": 4,
         "actions": [
             "random-walk",
             "move-toward-chemical-0",
@@ -1106,15 +1100,11 @@ def main():
         "lay_area": 1,
         "lay_amount": 3.0,
         "evaporation": 0.95,
-        "cluster_threshold": 1,
-        "cluster_radius": 1,
         "obs_type": "paper",
         #"obs_type": "variation1",
-        "normalize_rewards": False,
-        "cluster_rew": 10,
-        "cluster_penalty": -1,
-        "scatter_rew": 0,
-        "scatter_penalty": -1,
+        "food_reward": 1,
+        "nest_reward": 10,
+        "penalty": -0.1,
         "episode_ticks": 500,
         "W": 23,
         "H": 23,
