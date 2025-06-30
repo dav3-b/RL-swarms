@@ -1087,13 +1087,24 @@ def policy(agent, turtle, obs, th):
 
 def plot(ep, rewards_x_ep, ticks):
     import matplotlib.pyplot as plt
+    import pandas as pd
+
+    data = {
+        "Ticks": ticks,
+        "Avg_Reward": rewards_x_ep
+    }
+    df = pd.DataFrame(data)
+    df.to_csv("environments/ants_2/avg_reward.csv", sep=',', index=False)
 
     x = np.array([e for e in range(ep)])
     avg_reward = rewards_x_ep.mean()
     y = np.array([avg_reward for _ in range(ep)])
-    plt.ylabel(f"Avg Reward = {avg_reward}, Avg Ticks: {ticks}")
+    
+    fig = plt.figure(figsize=(10, 5), dpi=200)
+    plt.ylabel(f"Avg Reward = {round(avg_reward, 4)}, Std = {round(rewards_x_ep.std(), 4)} - Avg Ticks: {ticks.mean()}")
     plt.scatter(x, rewards_x_ep, s=4, linewidth=1.0, color='#648FFF')
     plt.plot(x, y, label="mean", marker='x', markersize=.5, linewidth=.5, color='#DC267F')
+    fig.tight_layout()
     plt.savefig("environments/ants_2/Avg_Reward")
     
 def main():
@@ -1155,14 +1166,14 @@ def main():
 
     actions = (0, 2, 4)
 
-    ticks = []
-    rewards = np.zeros(AGENTS_NUM)
+    ticks = np.zeros(EPISODES)
     rewards_x_ep = np.zeros(EPISODES)
 
     start_time = time.time()
     for ep in tqdm(range(1, EPISODES + 1), desc="Episode"):
         env.reset()
         tick = 1
+        rewards = np.zeros(AGENTS_NUM)
         #for tick in tqdm(range(params['episode_ticks']), desc="Tick", leave=False):
         while not env.done: 
             for agent in env.agent_iter(max_iter=AGENTS_NUM):
@@ -1174,7 +1185,7 @@ def main():
                 #action = random.choice(actions)
                 action = policy(agent, env.learners[int(agent)], observation, env.sniff_threshold)
                 env.step(action)
-                rewards[int(agent)] += round(reward, 2)
+                rewards[int(agent)] += round(reward, 4)
             #env_vis.render(
             #    env.patches,
             #    env.food_pos_1,
@@ -1189,14 +1200,12 @@ def main():
             tick += 1
             #breakpoint()
         #avg_cluster = env.avg_cluster()
-        ticks.append(tick)
+        ticks[ep - 1] = tick
         rewards_x_ep[ep - 1] = round((rewards.sum() / tick) / AGENTS_NUM, 4)
 
     print("Total time = ", time.time() - start_time)
-    avg_ticks = np.array(ticks).mean()
-    print("Avg Ticks: ", avg_ticks)
     
-    plot(EPISODES, rewards_x_ep, avg_ticks)
+    plot(EPISODES, rewards_x_ep, ticks)
 
     env.close()
 
