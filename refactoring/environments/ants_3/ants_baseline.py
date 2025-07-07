@@ -30,10 +30,10 @@ def plot(ep, rewards_x_ep, ticks):
         "Avg_Reward": rewards_x_ep
     }
     df = pd.DataFrame(data)
-    df.to_csv("environments/ants_2/metrics.csv", sep=',', index=False)
+    df.to_csv("environments/ants_3/metrics.csv", sep=',', index=False)
 
     x = np.array([e for e in range(ep)])
-
+    
     avg_reward = rewards_x_ep.mean()
     y = np.array([avg_reward for _ in range(ep)])
     fig = plt.figure(figsize=(10, 5), dpi=200)
@@ -41,7 +41,7 @@ def plot(ep, rewards_x_ep, ticks):
     plt.scatter(x, rewards_x_ep, s=4, linewidth=1.0, color='#648FFF')
     plt.plot(x, y, label="mean", marker='x', markersize=.5, linewidth=.5, color='#DC267F')
     fig.tight_layout()
-    plt.savefig("environments/ants_2/Avg_Reward")
+    plt.savefig("environments/ants_3/Avg_Reward")
     
     avg_tick = ticks.mean()
     y = np.array([avg_tick for _ in range(ep)])
@@ -50,7 +50,8 @@ def plot(ep, rewards_x_ep, ticks):
     plt.scatter(x, ticks, s=4, linewidth=1.0, color='#648FFF')
     plt.plot(x, y, label="mean", marker='x', markersize=.5, linewidth=.5, color='#DC267F')
     fig.tight_layout()
-    plt.savefig("environments/ants_2/Avg_Ticks")
+    plt.savefig("environments/ants_3/Avg_Ticks")
+
     
 def main():
     params = {
@@ -59,8 +60,8 @@ def main():
             "random-walk",
             "move-toward-chemical-0",
             "move-toward-chemical-1",
-            #"move-away-chemical-0",
-            #"move-away-chemical-1"
+            "move-and-drop-chemical-1",
+            "move-away-chemical-1"
         ],
         "sniff_threshold": 0.9,
         "sniff_patches": 5, 
@@ -71,15 +72,17 @@ def main():
         "wiggle_patches": 3,
         "lay_area": 1,
         "lay_amount": 5.0,
+        "ph_decay": 0.9,
         "evaporation": 0.95,
         "obs_type": "paper",
         #"obs_type": "variation1",
+        "food_quantity": 3,
         "food_reward": 1,
         "nest_reward": 10,
         "penalty": -0.1,
         "episode_ticks": 500,
-        "W": 23,
-        "H": 23,
+        "W": 31,
+        "H": 31,
         "PATCH_SIZE": 20,
         "TURTLE_SIZE": 16,
     }

@@ -1,5 +1,5 @@
 {
-    "learners": 20,
+    "learners": 40,
     "actions": [
         "random-walk",
         "move-toward-chemical-0",
@@ -15,8 +15,10 @@
     "wiggle_patches": 3,
     "lay_area": 1,
     "lay_amount": 3,
+    "ph_decay": 0.995,
     "evaporation": 0.95,
     "obs_type": "paper",
+    "food_quantity": 5,
     "food_reward": 1,
     "nest_reward": 10,
     "penalty": -0.1,
