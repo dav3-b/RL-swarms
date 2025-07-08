@@ -17,7 +17,7 @@ from ants import Ants, AntsVisualizer
 
 def policy(agent, turtle, obs, th):
     if turtle['flags'] == [1, 0, 0] or turtle['flags'] == [1, 0, 1]:
-        return 3
+        return 2
     else:
         return 1
 
@@ -30,7 +30,7 @@ def plot(ep, rewards_x_ep, ticks):
         "Avg_Reward": rewards_x_ep
     }
     df = pd.DataFrame(data)
-    df.to_csv("environments/ants_4/metrics.csv", sep=',', index=False)
+    df.to_csv("environments/ants_5/metrics.csv", sep=',', index=False)
 
     x = np.array([e for e in range(ep)])
     
@@ -41,7 +41,7 @@ def plot(ep, rewards_x_ep, ticks):
     plt.scatter(x, rewards_x_ep, s=4, linewidth=1.0, color='#648FFF')
     plt.plot(x, y, label="mean", marker='x', markersize=.5, linewidth=.5, color='#DC267F')
     fig.tight_layout()
-    plt.savefig("environments/ants_4/Avg_Reward")
+    plt.savefig("environments/ants_5/Avg_Reward")
     
     avg_tick = ticks.mean()
     y = np.array([avg_tick for _ in range(ep)])
@@ -50,12 +50,12 @@ def plot(ep, rewards_x_ep, ticks):
     plt.scatter(x, ticks, s=4, linewidth=1.0, color='#648FFF')
     plt.plot(x, y, label="mean", marker='x', markersize=.5, linewidth=.5, color='#DC267F')
     fig.tight_layout()
-    plt.savefig("environments/ants_4/Avg_Ticks")
+    plt.savefig("environments/ants_5/Avg_Ticks")
 
     
 def main():
     params = {
-        "learners": 40,
+        "learners": 20,
         "actions": [
             "random-walk",
             "move-toward-chemical-0",
@@ -64,16 +64,16 @@ def main():
             "move-away-chemical-1"
         ],
         "sniff_threshold": 0.9,
-        "sniff_patches": 5, 
+        "sniff_patches": 3, 
         "diffuse_area": 0.5,
         "diffuse_radius": 0,
         "follow_mode": "det",
         #"follow_mode": "prob",
         "wiggle_patches": 3,
         "lay_area": 1,
-        "lay_amount": 5.0,
+        "lay_amount": 3.0,
         "ph_decay": 0.9,
-        "evaporation": 0.95,
+        "evaporation": 0.9,
         "obs_type": "paper",
         #"obs_type": "variation1",
         "food_quantity": 3,
@@ -81,14 +81,14 @@ def main():
         "nest_reward": 10,
         "penalty": -0.1,
         "episode_ticks": 500,
-        "W": 31,
-        "H": 31,
+        "W": 23,
+        "H": 23,
         "PATCH_SIZE": 20,
         "TURTLE_SIZE": 16,
     }
 
     params_visualizer = {
-      "FPS": 10,
+      "FPS": 15,
       "SHADE_STRENGTH": 10,
       "SHOW_CHEM_TEXT_PH_0": False,
       "SHOW_CHEM_TEXT_PH_1": False,
@@ -104,7 +104,7 @@ def main():
 
     from tqdm import tqdm
 
-    EPISODES = 500
+    EPISODES = 5
     SEED = 0
     np.random.seed(SEED)
     env = Ants(SEED, **params)
