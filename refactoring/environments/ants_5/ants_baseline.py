@@ -64,7 +64,7 @@ def main():
             "move-away-chemical-1"
         ],
         "sniff_threshold": 0.9,
-        "sniff_patches": 3, 
+        "sniff_patches": 5, 
         "diffuse_area": 0.5,
         "diffuse_radius": 0,
         "follow_mode": "det",
@@ -88,7 +88,7 @@ def main():
     }
 
     params_visualizer = {
-      "FPS": 15,
+      "FPS": 10,
       "SHADE_STRENGTH": 10,
       "SHOW_CHEM_TEXT_PH_0": False,
       "SHOW_CHEM_TEXT_PH_1": False,
@@ -104,7 +104,7 @@ def main():
 
     from tqdm import tqdm
 
-    EPISODES = 5
+    EPISODES = 500
     SEED = 0
     np.random.seed(SEED)
     env = Ants(SEED, **params)
