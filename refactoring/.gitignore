@@ -5,7 +5,6 @@ server_runs
 imgs/
 paper_imgs/
 configs_done/
-*.ipynb
 *.txt
 *.png
 *.csv
