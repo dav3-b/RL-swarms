@@ -8,3 +8,4 @@ configs_done/
 *.txt
 *.png
 *.csv
+__pycache__/
