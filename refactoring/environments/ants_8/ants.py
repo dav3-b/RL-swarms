@@ -599,7 +599,7 @@ class Ants(AECEnv):
         if self.obs_type == "paper":
             max_pheromone, max_coords, max_ph_dir = self._find_max_pheromone2(
                 self.learners[self.agent],
-                self.observations[str(self.agent)][self.sniff_patches:]        
+                self.observations[str(self.agent)][self.sniff_patches:-2]        
             )
             if max_pheromone >= self.sniff_threshold:
                 self.patches, self.learners[self.agent] = self._follow_pheromone2(
@@ -617,7 +617,7 @@ class Ants(AECEnv):
         if self.obs_type == "paper":
             max_pheromone, max_coords, max_ph_dir = self._find_max_pheromone2(
                 self.learners[self.agent],
-                self.observations[str(self.agent)][self.sniff_patches:]        
+                self.observations[str(self.agent)][self.sniff_patches:-2]        
             )
             if max_pheromone >= self.sniff_threshold:
                 self.patches = self.lay_pheromone(self.patches, self.learners[self.agent]['pos'])
