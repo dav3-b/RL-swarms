@@ -102,6 +102,7 @@ def train(
         tick = 1
         
         while not env.done: 
+            actions = np.array([-1 for _ in range(AGENTS_NUM)], dtype=np.int8)
             for agent in env.agent_iter(max_iter=AGENTS_NUM):
                 cur_state, reward, _, _, _ = env.last(agent)
                 cur_s = env.convert_observation(cur_state)
@@ -128,6 +129,7 @@ def train(
                 #else:
                 #    env.step(action)
                 env.step(action)
+                actions[int(agent)] = action
 
                 old_s[agent] = cur_s
                 old_a[agent] = action
@@ -146,7 +148,8 @@ def train(
                     env.reward_patches,
                     env.learners,
                     env.fov,
-                    env.ph_fov
+                    env.ph_fov,
+                    actions
                 )
 
             tick += 1

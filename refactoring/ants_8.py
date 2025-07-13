@@ -1,3 +1,4 @@
+import json
 import sys
 import os
 from tqdm import tqdm
@@ -7,9 +8,37 @@ import argparse
 import numpy as np
 import random
 
-from agents.utils.utils import read_params
-from environments.ants_3.ants import Ants
+from environments.ants_8.ants import Ants
 from agents.IQLearning import iql_2 as iql
+
+def read_params(params_path: str, learning_params_path: str, visualizer_params_path: str, logger_params_path):
+    params, l_params, v_params, log_params = dict(), dict(), dict(), dict()
+
+    try:
+        with open(learning_params_path) as f:
+            l_params = json.load(f)
+    except Exception as e:
+        print(f"[ERROR] could not open learning params file: {e}")
+    
+    try:
+        with open(params_path) as f:
+            params = json.load(f)
+    except Exception as e:
+        print(f"[ERROR] could not open params file: {e}")
+
+    try:
+        with open(visualizer_params_path) as f:
+            v_params = json.load(f)
+    except Exception as e:
+        print(f"[ERROR] could not open visualizer params file: {e}")
+    
+    try:
+        with open(logger_params_path) as f:
+            log_params = json.load(f)
+    except Exception as e:
+        print(f"[ERROR] could not open logger params file: {e}")
+        
+    return params, l_params, v_params, log_params
 
 def create_logger(curdir, params, l_params, log_params, train, weights_path=None):
     from agents.utils.logger_2 import Logger
@@ -43,7 +72,7 @@ def main(args):
 
     env = Ants(args.random_seed, **params)
     if args.render:
-        from environments.ants_3.ants import AntsVisualizer
+        from environments.ants_8.ants import AntsVisualizer
         env_vis = AntsVisualizer(env.W_pixels, env.H_pixels, **v_params)
     else:
         env_vis = None
@@ -161,14 +190,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "--params_path",
         type=str,
-        default="environments/ants_3/config/env-params.json",
+        default="environments/ants_8/config/env-params.json",
         required=False
     )
 
     parser.add_argument(
         "--visualizer_params_path",
         type=str,
-        default="environments/ants_3/config/env_visualizer-params.json",
+        default="environments/ants_8/config/env_visualizer-params.json",
         required=False
     )
     

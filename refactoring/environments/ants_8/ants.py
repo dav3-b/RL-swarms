@@ -770,8 +770,8 @@ class Ants(AECEnv):
         #    self.do_action2()
         elif action == 2:   # Follow pheromone 1 and drop pheromone 0
             self.do_action3()
-        #elif action == 4:   # Avoid pheromone 1
-        #    self.do_action4()
+        elif action == 3:   # Avoid pheromone 1
+            self.do_action4()
         else:
             raise ValueError("Action out of range!")
 
@@ -1114,14 +1114,15 @@ class AntsVisualizer:
 
 def main():
     params = {
-        "learners": 2,
+        "learners": 40,
         "actions": [
             "random-walk",
             "move-toward-chemical-0",
             "move-and-drop-chemical-1",
+            "move-away-chemical-1"
         ],
         "sniff_threshold": 0.9,
-        "sniff_patches": 3, 
+        "sniff_patches": 5, 
         "diffuse_area": 0.5,
         "diffuse_radius": 0,
         "follow_mode": "det",
@@ -1182,9 +1183,9 @@ def main():
                 #breakpoint()
                 id = env.convert_observation(observation)
                 action = np.random.randint(0, ACTION_NUM)
-                #env.step(action)
+                env.step(action)
                 actions[int(agent)] = action
-                env.step(2)
+                #env.step(2)
             env_vis.render(
                 env.patches,
                 env.food_pos_1,
@@ -1197,7 +1198,7 @@ def main():
                 env.ph_fov,
                 actions
             )
-            breakpoint()
+            #breakpoint()
 
     print("Total time = ", time.time() - start_time)
     env.close()

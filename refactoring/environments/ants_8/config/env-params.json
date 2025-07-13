@@ -3,7 +3,8 @@
     "actions": [
         "random-walk",
         "move-toward-chemical-0",
-        "move-and-drop-chemical-1"
+        "move-and-drop-chemical-1",
+        "move-away-chemical-1"
     ],
     "sniff_threshold": 0.9,
     "sniff_patches": 3,
