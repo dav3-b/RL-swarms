@@ -30,7 +30,7 @@ def plot(ep, rewards_x_ep, ticks):
         "Avg_Reward": rewards_x_ep
     }
     df = pd.DataFrame(data)
-    df.to_csv("environments/ants_4/metrics.csv", sep=',', index=False)
+    df.to_csv("environments/ants_8/metrics.csv", sep=',', index=False)
 
     x = np.array([e for e in range(ep)])
     
@@ -41,7 +41,7 @@ def plot(ep, rewards_x_ep, ticks):
     plt.scatter(x, rewards_x_ep, s=4, linewidth=1.0, color='#648FFF')
     plt.plot(x, y, label="mean", marker='x', markersize=.5, linewidth=.5, color='#DC267F')
     fig.tight_layout()
-    plt.savefig("environments/ants_4/Avg_Reward")
+    plt.savefig("environments/ants_8/Avg_Reward")
     
     avg_tick = ticks.mean()
     y = np.array([avg_tick for _ in range(ep)])
@@ -50,7 +50,7 @@ def plot(ep, rewards_x_ep, ticks):
     plt.scatter(x, ticks, s=4, linewidth=1.0, color='#648FFF')
     plt.plot(x, y, label="mean", marker='x', markersize=.5, linewidth=.5, color='#DC267F')
     fig.tight_layout()
-    plt.savefig("environments/ants_4/Avg_Ticks")
+    plt.savefig("environments/ants_8/Avg_Ticks")
 
     
 def main():
@@ -64,15 +64,16 @@ def main():
             "move-away-chemical-1"
         ],
         "sniff_threshold": 0.9,
-        "sniff_patches": 5, 
+        "sniff_patches": 3, 
         "diffuse_area": 0.5,
         "diffuse_radius": 0,
         "follow_mode": "det",
         #"follow_mode": "prob",
         "wiggle_patches": 3,
         "lay_area": 1,
-        "lay_amount": 5.0,
-        "ph_decay": 0.9,
+        "lay_amount": 3.0,
+        "lay_amount_first": 1, 
+        "ph_decay": 1.0,
         "evaporation": 0.95,
         "obs_type": "paper",
         #"obs_type": "variation1",
@@ -80,7 +81,7 @@ def main():
         "food_reward": 1,
         "nest_reward": 10,
         "penalty": -0.1,
-        "episode_ticks": 500,
+        "max_episode_ticks": 1000,
         "W": 31,
         "H": 31,
         "PATCH_SIZE": 20,
@@ -108,7 +109,7 @@ def main():
     SEED = 0
     np.random.seed(SEED)
     env = Ants(SEED, **params)
-    env_vis = AntsVisualizer(env.W_pixels, env.H_pixels, **params_visualizer)
+    #env_vis = AntsVisualizer(env.W_pixels, env.H_pixels, **params_visualizer)
     ACTION_NUM = len(params["actions"])
     AGENTS_NUM = env.num_learners 
 
@@ -124,6 +125,7 @@ def main():
         rewards = np.zeros(AGENTS_NUM)
         #for tick in tqdm(range(params['episode_ticks']), desc="Tick", leave=False):
         while not env.done: 
+            actions = np.array([-1 for _ in range(AGENTS_NUM)], dtype=np.int8)
             for agent in env.agent_iter(max_iter=AGENTS_NUM):
                 observation, reward, _ , _, info = env.last(agent)
                 #breakpoint()
@@ -134,6 +136,7 @@ def main():
                 action = policy(agent, env.learners[int(agent)], observation, env.sniff_threshold)
                 env.step(action)
                 rewards[int(agent)] += round(reward, 4)
+                actions[int(agent)] = action
             #env_vis.render(
             #    env.patches,
             #    env.food_pos_1,
@@ -143,7 +146,8 @@ def main():
             #    env.reward_patches,
             #    env.learners,
             #    env.fov,
-            #    env.ph_fov
+            #    env.ph_fov,
+            #    actions
             #)
             tick += 1
             #breakpoint()

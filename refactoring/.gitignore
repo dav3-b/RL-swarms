@@ -5,6 +5,7 @@ server_runs
 imgs/
 paper_imgs/
 configs_done/
+environments/ants_bugged_versions/
 *.txt
 *.png
 *.csv

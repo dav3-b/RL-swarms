@@ -84,11 +84,13 @@ class Ants(AECEnv):
         self.lay_amount_init = kwargs['lay_amount']
         self.lay_amount = np.array([self.lay_amount_init for _ in range(self.num_learners)])
         self.lay_amount_min = 1.0
+        self.lay_amount_first = kwargs['lay_amount_first']
+        self.first_drop = np.array([True for _ in range(self.num_learners)])
         
         self.ph_decay = kwargs['ph_decay']
         self.evaporation = kwargs['evaporation']
         self.follow_mode = kwargs['follow_mode']
-        self.episode_ticks = kwargs['episode_ticks']
+        self.MAX_TICKS = kwargs['max_episode_ticks']
     
         self.food_quantity = kwargs['food_quantity']
         self.food_reward = kwargs['food_reward']
@@ -352,6 +354,7 @@ class Ants(AECEnv):
         elif self.learners[self.agent]['pos'] in self.reward_patches[self.nest_pos] and self.learners[self.agent]['flags'] == [1, 1, 1]:
             #breakpoint()
             self._reset_flags(self.agent)
+            self.first_drop[self.agent] = True
             return self.nest_reward
         else:
             return self.penalty
@@ -515,14 +518,13 @@ class Ants(AECEnv):
     def do_action0(self):
         self.patches, self.learners[self.agent] = self._walk2(self.patches, self.learners[self.agent])
 
-    def _find_max_pheromone2(self, agent, observations):
+    def _find_max_pheromone2(self, agent, obs):
         """
         Following pheromone modeis controlled by param self.follow_mode:
             'det' = follow greatest pheromone
             'prob' = follow greatest pheromone probabilistically (pheromone strength as weight)
         """
         # Det = follow greatest pheromone
-        obs = observations[:-2]
         f, direction = self._get_new_positions(self.ph_fov, agent)
         if self.follow_mode == "prob": 
             total = obs.sum()
@@ -557,16 +559,21 @@ class Ants(AECEnv):
 
     def lay_pheromone(self, patches, pos):
         # Bisogna calcolarlo per ogni agente
-        if self.learners[self.agent]['flags'] == [1, 0, 0] or self.learners[self.agent]['flags'] == [1, 0, 1]:
-            self.lay_amount[self.agent] = max(self.lay_amount[self.agent] * self.ph_decay, self.lay_amount_min)
+        
+        if self.first_drop[self.agent] and (self.learners[self.agent]['flags'] == [1, 0, 0] or self.learners[self.agent]['flags'] == [1, 0, 1]):
+            #breakpoint()
+            ph = self.lay_amount_init * self.lay_amount_first
+            self.first_drop[self.agent] = False 
+        elif self.learners[self.agent]['flags'] == [1, 0, 0] or self.learners[self.agent]['flags'] == [1, 0, 1]:
+            ph = max(self.lay_amount[self.agent] * self.ph_decay, self.lay_amount_min)
+            self.lay_amount[self.agent] = ph
             #breakpoint()
         else:
-            self.lay_amount[self.agent] = self.lay_amount_init
+            ph = self.lay_amount_init
+            self.lay_amount[self.agent] = ph 
 
         for p in self.lay_patches[pos]:
-            patches[p]['chemical_0'] +=  self.lay_amount[self.agent]
-        
-        #breakpoint()
+            patches[p]['chemical_0'] +=  ph #self.lay_amount[self.agent]
 
         return patches
                 
@@ -625,8 +632,7 @@ class Ants(AECEnv):
         elif self.obs_type == "variation1":
             pass
 
-    def _find_non_max_pheromone(self, agent, observations):
-        obs = observations[:-2]
+    def _find_non_max_pheromone(self, agent, obs):
         f, direction = self._get_new_positions(self.ph_fov, agent)
         ids = np.where(obs < self.sniff_threshold)[0]
         
@@ -680,7 +686,7 @@ class Ants(AECEnv):
             if self.obs_type == "paper":
                 ph_pos, ph_dir = self._find_non_max_pheromone(
                     self.learners[self.agent], 
-                    self.observations[str(self.agent)][self.sniff_patches:]        
+                    self.observations[str(self.agent)][self.sniff_patches:-2]        
                 )
                 self.patches, self.learners[self.agent] = self._avoid_pheromone(
                     self.patches,
@@ -742,8 +748,8 @@ class Ants(AECEnv):
                 tmp.append(True)
             else:
                 tmp.append(False)
-
-        if all(tmp) and self.no_food:
+        
+        if (all(tmp) and self.no_food) or self.current_ticks == self.MAX_TICKS:
             #breakpoint()
             self.done = True
 
@@ -760,12 +766,12 @@ class Ants(AECEnv):
             self.do_action0()   
         elif action == 1:   # Follow pheromone 0
             self.do_action1()
-        elif action == 2:   # Follow pheromone 1
-            self.do_action2()
-        elif action == 3:   # Follow pheromone 1 and drop pheromone 0
+        #elif action == 2:   # Follow pheromone 1
+        #    self.do_action2()
+        elif action == 2:   # Follow pheromone 1 and drop pheromone 0
             self.do_action3()
-        elif action == 4:   # Avoid pheromone 1
-            self.do_action4()
+        #elif action == 4:   # Avoid pheromone 1
+        #    self.do_action4()
         else:
             raise ValueError("Action out of range!")
 
@@ -780,6 +786,7 @@ class Ants(AECEnv):
                 self.rewards[ag] = self.rewards_cust[self.agent_name_mapping[ag]][-1]
 
             self.patches = self._diffuse_and_evaporate(self.patches)
+            self.current_ticks += 1
         else:
             self._clear_rewards()
          
@@ -797,6 +804,8 @@ class Ants(AECEnv):
         #Different from AECEnv attribute self.rewards - only keeps last step rewards
         self.rewards_cust = {i: [] for i in range(self.num_learners)}
         self.cluster_ticks = {i: 0 for i in range(self.num_learners)}
+
+        self.current_ticks = 1
         
         #Initialize attributes for PettingZoo Env
         self.agents = self.possible_agents[:]
@@ -891,6 +900,7 @@ RED = (190, 0, 0)
 PINK = (255, 20, 147)
 GREEN = (0, 190, 0)
 YELLOW = (250, 250, 0)
+ORANGE = (255, 128, 0) 
 
 class AntsVisualizer:
     def __init__(
@@ -912,13 +922,14 @@ class AntsVisualizer:
         self.W_pixels = W_pixels
         self.H_pixels = H_pixels
         self.offset = self.patch_size // 2
+        self.first_gui = True
+
         self.screen = pygame.display.set_mode((self.W_pixels, self.H_pixels))
         self.clock = pygame.time.Clock()
         pygame.font.init()
         self.cluster_font = pygame.font.SysFont("arial", self.cluster_font_size)
         self.chemical_font = pygame.font.SysFont("arial", self.chemical_font_size)
         self.ph_pos_font = pygame.font.SysFont("arial", self.chemical_font_size * 2)
-        self.first_gui = True
 
         self.show_dirs_view = kwargs["show_dirs_view"]
         if self.show_dirs_view:
@@ -950,7 +961,8 @@ class AntsVisualizer:
         reward_patches,
         learners,
         fov,
-        ph_fov
+        ph_fov,
+        actions
     ):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:  # window closed -> program quits
@@ -1008,7 +1020,7 @@ class AntsVisualizer:
 
             if self.show_chem_text_ph_0 and (not sys.gettrace() is None or
                                         patches[p]['chemical_0'] >= self.sniff_threshold):  # if debugging show text everywhere, even 0
-                text = self.chemical_font.render(str(round(patches[p]['chemical_0'], 1)), True, GREEN)
+                text = self.chemical_font.render(str(round(patches[p]['chemical_0'], 1)), True, BLACK)
                 self.screen.blit(text, text.get_rect(center=p))
             
             if self.show_chem_text_ph_1 and (not sys.gettrace() is None or
@@ -1018,9 +1030,16 @@ class AntsVisualizer:
         
         # draw learners
         for i, learner in enumerate(learners.values()):
+            if learner['flags'] == [1, 0, 1]:
+                learner_color = RED
+            elif actions[i] == 1:
+                learner_color = ORANGE
+            else:
+                learner_color = BLUE
+
             pygame.draw.circle(
                 self.screen,
-                RED if learner['flags'] == [1, 0, 1] else BLUE,
+                learner_color,
                 (learner['pos'][0], learner['pos'][1]),
                 self.turtle_size // 2
             )
@@ -1095,13 +1114,11 @@ class AntsVisualizer:
 
 def main():
     params = {
-        "learners": 20,
+        "learners": 2,
         "actions": [
             "random-walk",
             "move-toward-chemical-0",
-            "move-toward-chemical-1",
             "move-and-drop-chemical-1",
-            "move-away-chemical-1"
         ],
         "sniff_threshold": 0.9,
         "sniff_patches": 3, 
@@ -1112,15 +1129,16 @@ def main():
         "wiggle_patches": 3,
         "lay_area": 1,
         "lay_amount": 3.0,
+        "lay_amount_first": 1, 
         "ph_decay": 0.9,
         "evaporation": 0.95,
         "obs_type": "paper",
         #"obs_type": "variation1",
-        "food_quantity": 3,
+        "food_quantity": 1,
         "food_reward": 1,
         "nest_reward": 10,
         "penalty": -0.1,
-        "episode_ticks": 500,
+        "max_episode_ticks": 500,
         "W": 31,
         "H": 31,
         "PATCH_SIZE": 20,
@@ -1128,7 +1146,7 @@ def main():
     }
 
     params_visualizer = {
-      "FPS": 15,
+      "FPS": 10,
       "SHADE_STRENGTH": 10,
       "SHOW_CHEM_TEXT_PH_0": False,
       "SHOW_CHEM_TEXT_PH_1": False,
@@ -1158,13 +1176,15 @@ def main():
         #for tick in tqdm(range(params['episode_ticks']), desc="Tick", leave=False):
         while not env.done: 
             #breakpoint()
+            actions = np.array([-1 for _ in range(AGENTS_NUM)], dtype=np.int8)
             for agent in env.agent_iter(max_iter=AGENTS_NUM):
                 observation, reward, _ , _, info = env.last(agent)
                 #breakpoint()
                 id = env.convert_observation(observation)
                 action = np.random.randint(0, ACTION_NUM)
-                env.step(action)
-                #env.step(3)
+                #env.step(action)
+                actions[int(agent)] = action
+                env.step(2)
             env_vis.render(
                 env.patches,
                 env.food_pos_1,
@@ -1174,8 +1194,10 @@ def main():
                 env.reward_patches,
                 env.learners,
                 env.fov,
-                env.ph_fov
+                env.ph_fov,
+                actions
             )
+            breakpoint()
 
     print("Total time = ", time.time() - start_time)
     env.close()
