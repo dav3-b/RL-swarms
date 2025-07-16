@@ -179,10 +179,10 @@ class Ants(AECEnv):
         #self.nest_pos = (self.coords[0][0] + self.patch_size * int(self.W * 3/4), self.coords[0][1] + self.patch_size * int(self.H * 3/4)) 
         self.nest_pos = (self.coords[0][0] + self.patch_size * int(self.W * 1/2), self.coords[0][1] + self.patch_size * int(self.H * 1/2)) 
         
-        self.possible_states = self.sniff_patches**2 * 2**2
+        self.possible_states = (self.sniff_patches + self.sniff_patches**2) * (2**2)
         self.map_matrix = np.array(
             [i for i in range(0, self.possible_states, 4)]
-        ).reshape(self.sniff_patches, self.sniff_patches)
+        ).reshape(-1, self.sniff_patches)
         
         # create learners turtle
         self.learners = {
@@ -590,8 +590,8 @@ class Ants(AECEnv):
                     max_ph_dir,
                     self.learners[self.agent]
                 )
-            else:
-                self.do_action0()
+            #else:
+            #    self.do_action0()
         elif self.obs_type == "variation1":
             pass
     
@@ -608,8 +608,8 @@ class Ants(AECEnv):
                     max_ph_dir,
                     self.learners[self.agent]
                 )
-            else:
-                self.do_action0()
+            #else:
+            #    self.do_action0()
         elif self.obs_type == "variation1":
             pass
     
@@ -627,8 +627,8 @@ class Ants(AECEnv):
                     max_ph_dir,
                     self.learners[self.agent]
                 )
-            else:
-                self.do_action0()
+            #else:
+            #    self.do_action0()
         elif self.obs_type == "variation1":
             pass
 
@@ -871,14 +871,19 @@ class Ants(AECEnv):
         #        pass
 
         obs_ph_0 = obs[:self.sniff_patches]
-        obs_ph_1 = obs[self.sniff_patches:self.sniff_patches * 2]
+        obs_ph_1 = obs[self.sniff_patches:-2]
         food = int(obs[-2])
         nest = int(obs[-1])
         
-        if np.unique(obs_ph_0).shape[0] == 1:
-            obs_ph_0_id = np.random.randint(self.sniff_patches)
+        if np.any(obs_ph_0 >= self.sniff_threshold):
+            obs_ph_0_id = 1
+            
+            if np.unique(obs_ph_0).shape[0] == 1:
+                obs_ph_0_id += np.random.randint(self.sniff_patches)
+            else:
+                obs_ph_0_id += obs_ph_0.argmax()
         else:
-            obs_ph_0_id  = obs_ph_0.argmax()
+            obs_ph_0_id = 0
         
         if np.unique(obs_ph_1).shape[0] == 1:
             obs_ph_1_id = np.random.randint(self.sniff_patches)
@@ -1116,15 +1121,14 @@ class AntsVisualizer:
 
 def main():
     params = {
-        "learners": 40,
+        "learners": 4,
         "actions": [
             "random-walk",
             "move-toward-chemical-0",
-            "move-and-drop-chemical-1",
-            "move-away-chemical-1"
+            "move-and-drop-chemical-1"
         ],
         "sniff_threshold": 0.9,
-        "sniff_patches": 5, 
+        "sniff_patches": 3, 
         "diffuse_area": 0.5,
         "diffuse_radius": 0,
         "follow_mode": "det",

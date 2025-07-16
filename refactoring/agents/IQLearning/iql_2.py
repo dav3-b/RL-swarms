@@ -210,6 +210,7 @@ def eval(
         tick = 1
         
         while not env.done: 
+            actions = np.array([-1 for _ in range(AGENTS_NUM)], dtype=np.int8)
             for agent in env.agent_iter(max_iter=AGENTS_NUM):
                 state, reward, _, _, _ = env.last(agent)
                 s = env.convert_observation(state)
@@ -221,6 +222,7 @@ def eval(
                 #else:
                 #    env.step(action)
                 env.step(action)
+                actions[int(agent)] = action
                 
                 actions_dict[str(ep)][str(action)] += 1
                 action_dict[str(ep)][str(agent)][str(action)] += 1
@@ -236,7 +238,8 @@ def eval(
                     env.reward_patches,
                     env.learners,
                     env.fov,
-                    env.ph_fov
+                    env.ph_fov,
+                    actions
                 )
 
             tick += 1
