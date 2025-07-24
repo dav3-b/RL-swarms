@@ -15,22 +15,31 @@ from pettingzoo.utils.env import ObsType
 
 from ants import Ants, AntsVisualizer
 
-def policy(agent, turtle, obs, th):
-    if turtle['flags'] == [1, 0, 0] or turtle['flags'] == [1, 0, 1]:
-        return 2
+def policy(turtle, obs, patches, th):
+    max_ph_pos = obs[:patches].argmax()
+    max_ph = obs[max_ph_pos]
+    
+    if max_ph >= th:
+        action = 1
     else:
-        return 1
+        action = 0
 
-def plot(ep, rewards_x_ep, ticks):
+    if turtle['flags'] == [1, 0, 0] or turtle['flags'] == [1, 0, 1]:
+        action = 2
+    
+    return action
+
+def plot(ep, rewards_x_ep, actions_x_ep, ticks, actions_name):
     import matplotlib.pyplot as plt
     import pandas as pd
 
     data = {
         "Ticks": ticks,
-        "Avg_Reward": rewards_x_ep
+        "Avg_Reward": rewards_x_ep,
     }
+    data.update({actions_name[i]: actions_x_ep[:, i] for i in range(actions_x_ep.shape[1])})
     df = pd.DataFrame(data)
-    df.to_csv("environments/ants_8/metrics.csv", sep=',', index=False)
+    df.to_csv("environments/ants_9/metrics.csv", sep=',', index=False)
 
     x = np.array([e for e in range(ep)])
     
@@ -41,7 +50,7 @@ def plot(ep, rewards_x_ep, ticks):
     plt.scatter(x, rewards_x_ep, s=4, linewidth=1.0, color='#648FFF')
     plt.plot(x, y, label="mean", marker='x', markersize=.5, linewidth=.5, color='#DC267F')
     fig.tight_layout()
-    plt.savefig("environments/ants_8/Avg_Reward")
+    plt.savefig("environments/ants_9/Avg_Reward")
     
     avg_tick = ticks.mean()
     y = np.array([avg_tick for _ in range(ep)])
@@ -50,7 +59,7 @@ def plot(ep, rewards_x_ep, ticks):
     plt.scatter(x, ticks, s=4, linewidth=1.0, color='#648FFF')
     plt.plot(x, y, label="mean", marker='x', markersize=.5, linewidth=.5, color='#DC267F')
     fig.tight_layout()
-    plt.savefig("environments/ants_8/Avg_Ticks")
+    plt.savefig("environments/ants_9/Avg_Ticks")
 
     
 def main():
@@ -59,9 +68,7 @@ def main():
         "actions": [
             "random-walk",
             "move-toward-chemical-0",
-            "move-toward-chemical-1",
             "move-and-drop-chemical-1",
-            "move-away-chemical-1"
         ],
         "sniff_threshold": 0.9,
         "sniff_patches": 3, 
@@ -117,12 +124,14 @@ def main():
 
     ticks = np.zeros(EPISODES)
     rewards_x_ep = np.zeros(EPISODES)
+    actions_x_ep = np.zeros((EPISODES, ACTION_NUM))
 
     start_time = time.time()
     for ep in tqdm(range(1, EPISODES + 1), desc="Episode"):
         env.reset()
         tick = 1
         rewards = np.zeros(AGENTS_NUM)
+        track_actions = np.zeros(ACTION_NUM)
         #for tick in tqdm(range(params['episode_ticks']), desc="Tick", leave=False):
         while not env.done: 
             actions = np.array([-1 for _ in range(AGENTS_NUM)], dtype=np.int8)
@@ -133,9 +142,10 @@ def main():
                 #action = np.random.randint(0, ACTION_NUM)
                 #env.step(action)
                 #action = random.choice(actions)
-                action = policy(agent, env.learners[int(agent)], observation, env.sniff_threshold)
+                action = policy(env.learners[int(agent)], observation, env.sniff_patches, env.sniff_threshold)
                 env.step(action)
                 rewards[int(agent)] += round(reward, 4)
+                track_actions[action] += 1
                 actions[int(agent)] = action
             #env_vis.render(
             #    env.patches,
@@ -154,10 +164,11 @@ def main():
         #avg_cluster = env.avg_cluster()
         ticks[ep - 1] = tick
         rewards_x_ep[ep - 1] = round((rewards.sum() / tick) / AGENTS_NUM, 4)
+        actions_x_ep[ep - 1] = (track_actions / tick) / AGENTS_NUM
 
     print("Total time = ", time.time() - start_time)
     
-    plot(EPISODES, rewards_x_ep, ticks)
+    plot(EPISODES, rewards_x_ep, actions_x_ep.round(2), ticks, params['actions'])
 
     env.close()
 
