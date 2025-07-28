@@ -145,14 +145,18 @@ def train(
                     #env.food_pos_2,
                     #env.food_pos_3,
                     env.nest_pos,
-                    env.reward_patches,
-                    #env.patches_food_1,
+                    #env.reward_patches,
+                    env.patches_food_1,
                     #env.patches_food_2,
                     #env.patches_food_3,
-                    #env.patches_nest,
+                    env.patches_nest,
                     env.learners,
                     env.fov,
+                    env.fov_dirs,
                     env.ph_fov,
+                    env.ph_fov_dirs,
+                    env.min_coord,
+                    env.max_coord,
                     actions
                 )
 
@@ -239,14 +243,18 @@ def eval(
                     #env.food_pos_2,
                     #env.food_pos_3,
                     env.nest_pos,
-                    env.reward_patches,
-                    #env.patches_food_1,
+                    #env.reward_patches,
+                    env.patches_food_1,
                     #env.patches_food_2,
                     #env.patches_food_3,
-                    #env.patches_nest,
+                    env.patches_nest,
                     env.learners,
                     env.fov,
+                    env.fov_dirs,
                     env.ph_fov,
+                    env.ph_fov_dirs,
+                    env.min_coord,
+                    env.max_coord,
                     actions
                 )
 
