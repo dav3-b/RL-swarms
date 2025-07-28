@@ -89,10 +89,10 @@ def main():
         "nest_reward": 10,
         "penalty": -0.1,
         "max_episode_ticks": 1000,
-        "W": 69,
-        "H": 69,
-        "PATCH_SIZE": 14,
-        "TURTLE_SIZE": 14,
+        "W": 31,
+        "H": 31,
+        "PATCH_SIZE": 20,
+        "TURTLE_SIZE": 16,
     }
 
     params_visualizer = {
@@ -103,11 +103,12 @@ def main():
         "CLUSTER_FONT_SIZE": 12,
         "CHEMICAL_FONT_SIZE": 8,
         "sniff_threshold": 0.0,
-        "PATCH_SIZE": 14,
-        "TURTLE_SIZE": 14,
+        "PATCH_SIZE": 20,
+        "TURTLE_SIZE": 16,
         "show_dirs_view": False,
         "wiggle_patches": 5,
-        "show_ph_view": False
+        "show_ph_0_view": False,
+        "show_ph_1_view": False
     }
 
     from tqdm import tqdm
@@ -159,11 +160,15 @@ def main():
                 env.patches_nest,
                 env.learners,
                 env.fov,
+                env.fov_dirs,
                 env.ph_fov,
+                env.ph_fov_dirs,
+                env.min_coord,
+                env.max_coord,
                 actions
             )
             tick += 1
-            breakpoint()
+            #breakpoint()
         #avg_cluster = env.avg_cluster()
         ticks[ep - 1] = tick
         rewards_x_ep[ep - 1] = round((rewards.sum() / tick) / AGENTS_NUM, 4)

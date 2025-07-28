@@ -983,11 +983,6 @@ class Ants(AECEnv):
         
         self.agent = self.agent_name_mapping[self.agent_selection]  # ID of agent
 
-        self.observations[str(self.agent)], self.cluster_ticks, self.rewards_cust = self.process_agent(
-            self.cluster_ticks,
-            self.rewards_cust,
-        )
-        
         if action == 0:     # Random walk
             self.do_action0()   
         elif action == 1:   # Follow pheromone 0
@@ -1000,6 +995,11 @@ class Ants(AECEnv):
             self.do_action4()
         else:
             raise ValueError("Action out of range!")
+
+        self.observations[str(self.agent)], self.cluster_ticks, self.rewards_cust = self.process_agent(
+            self.cluster_ticks,
+            self.rewards_cust,
+        )
 
         if self._agent_selector.is_last():
             for ag in self.agents:
@@ -1402,7 +1402,7 @@ def main():
             "random-walk",
             "move-toward-chemical-0",
             "move-and-drop-chemical-1",
-            #"move-away-chemical-1"
+            "move-away-chemical-1"
         ],
         "sniff_threshold": 0.9,
         "sniff_patches": 3, 
@@ -1418,7 +1418,7 @@ def main():
         "evaporation": 0.95,
         "obs_type": "paper",
         #"obs_type": "variation1",
-        "food_quantity": 9,
+        "food_quantity": 3,
         "food_reward": 1,
         "nest_reward": 10,
         "penalty": -0.1,
@@ -1465,6 +1465,7 @@ def main():
     for ep in tqdm(range(1, EPISODES + 1), desc="Episode"):
         env.reset()
         #for tick in tqdm(range(params['episode_ticks']), desc="Tick", leave=False):
+        ticks = 1
         while not env.done: 
             #breakpoint()
             actions = np.array([-1 for _ in range(AGENTS_NUM)], dtype=np.int8)
@@ -1496,8 +1497,10 @@ def main():
                 env.max_coord,
                 actions
             )
-            breakpoint()
+            #breakpoint()
+            ticks += 1
 
+    print("Ticks: ", ticks)
     print("Total time = ", time.time() - start_time)
     env.close()
 
