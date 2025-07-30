@@ -455,17 +455,19 @@ class Ants(AECEnv):
         
         return patches
     
-    def _get_new_positions(self, possible_patches, agent):
+    def _get_new_positions(self, possible_patches, agent, random_walk=False):
         #breakpoint()
         pos = agent["pos"]
         dir = agent["dir"]
-        if pos in self.fov_dirs.keys():
+        fov = self.fov_dirs if random_walk else self.ph_fov_dirs
+
+        if pos in fov.keys():
             # Convenzione del momento:
             # se l'agente ha una direzione perpendicolare all'ostacolo inverte la sua direzione,
             # altrimenti viene approssimata con la posizione più vicina.
-            i, j = np.where(self.fov_dirs[pos] == dir)
+            i, j = np.where(fov[pos] == dir)
             if i.size != 0 and j.size != 0:
-                new_dir = self.fov_dirs[pos][-1][j].item()
+                new_dir = fov[pos][-1][j].item()
                 #new_pos = possible_patches[pos][new_dir]
             else:
                 new_dir = dir
@@ -542,7 +544,6 @@ class Ants(AECEnv):
             return self.food_reward
         # Sorgente B
         elif self.learners[self.agent]['pos'] in self.patches_nest and self.learners[self.agent]['flags'] == [1, 1, 1]:
-            #breakpoint()
             self._reset_flags(self.agent)
             self.first_drop[self.agent] = True
             return self.nest_reward
@@ -705,7 +706,7 @@ class Ants(AECEnv):
         """
         Action 0: move in random direction (8 sorrounding cells)
         """      
-        f, direction = self._get_new_positions(self.fov, turtle)
+        f, direction = self._get_new_positions(self.fov, turtle, True)
         patches[turtle['pos']]['turtles'].remove(self.agent)
         idx_dir = self._get_idx_dir(f)
         turtle["pos"] = tuple(f[idx_dir])
@@ -743,7 +744,6 @@ class Ants(AECEnv):
         #    idx = obs.argmax()
         
         
-        #breakpoint()
         #if np.any((f < self.min_coord[0]) | (f > self.max_coord[0])):
         x = np.any((f < self.min_coord[0]) | (f > self.max_coord[0]), axis=-1)
         y = np.where(x == False)[0]
@@ -1265,13 +1265,16 @@ class AntsVisualizer:
         
         # draw learners
         for i, learner in enumerate(learners.values()):
-            if learner['flags'] == [1, 0, 1]:
+            if learner['flags'] != [0, 0, 0] and learner['flags'] != [0, 0, 1] and actions[i] == 2:
+                learner_color = BLUE
+            elif learner['flags'] != [0, 0, 0] and learner['flags'] != [0, 0, 1] and (actions[i] == 0 or actions[i] == 1):
                 learner_color = RED
-            elif actions[i] == 1:
+
+            if (learner['flags'] == [0, 0, 0] or learner['flags'] == [0, 0, 1]) and actions[i] == 2:
+                learner_color = RED
+            elif (learner['flags'] == [0, 0, 0] or learner['flags'] == [0, 0, 1]) and actions[i] == 0:
                 learner_color = ORANGE
-            elif actions[i] == 0:
-                learner_color = BLACK
-            else:
+            elif (learner['flags'] == [0, 0, 0] or learner['flags'] == [0, 0, 1]) and actions[i] == 1:
                 learner_color = BLUE
 
             pygame.draw.circle(
@@ -1303,7 +1306,6 @@ class AntsVisualizer:
                     y = np.where(x == False)[0]
                     view = fov[learner['pos']][new_dir][y]
                     dirs = self.dirs[new_dir][y]
-                    breakpoint()
                 else:
                     if len(fov[learner["pos"]].shape) > 2:
                         view = fov[learner["pos"]][learner["dir"]]
@@ -1402,7 +1404,7 @@ def main():
             "random-walk",
             "move-toward-chemical-0",
             "move-and-drop-chemical-1",
-            "move-away-chemical-1"
+            #"move-away-chemical-1"
         ],
         "sniff_threshold": 0.9,
         "sniff_patches": 3, 
