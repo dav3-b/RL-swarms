@@ -81,9 +81,9 @@ class Ants(AECEnv):
         self.diffuse_radius = kwargs['diffuse_radius']
         self.lay_area = kwargs['lay_area']
         
-        self.lay_amount_init = kwargs['lay_amount']
-        self.lay_amount = np.array([self.lay_amount_init for _ in range(self.num_learners)])
-        self.lay_amount_min = 1.0
+        self.lay_amount_food = kwargs['lay_amount']
+        self.lay_amount = np.array([self.lay_amount_food for _ in range(self.num_learners)])
+        self.lay_amount_min = kwargs['lay_amount_min']
         self.lay_amount_first = kwargs['lay_amount_first']
         self.first_drop = np.array([True for _ in range(self.num_learners)])
         
@@ -776,19 +776,21 @@ class Ants(AECEnv):
 
     def lay_pheromone(self, patches, pos):
         # Bisogna calcolarlo per ogni agente
+        #breakpoint()
         
         if self.first_drop[self.agent] and (self.learners[self.agent]['flags'] == [1, 0, 0] or self.learners[self.agent]['flags'] == [1, 0, 1]):
             #breakpoint()
-            ph = self.lay_amount_init * self.lay_amount_first
+            ph = self.lay_amount_food * self.lay_amount_first
             self.first_drop[self.agent] = False 
         elif self.learners[self.agent]['flags'] == [1, 0, 0] or self.learners[self.agent]['flags'] == [1, 0, 1]:
             ph = max(self.lay_amount[self.agent] * self.ph_decay, self.lay_amount_min)
-            self.lay_amount[self.agent] = ph
+            #self.lay_amount[self.agent] = ph
             #breakpoint()
         else:
-            ph = self.lay_amount_init
-            self.lay_amount[self.agent] = ph 
+            ph = 0.0 #self.lay_amount_min
 
+        self.lay_amount[self.agent] = ph 
+        
         #for p in self.lay_patches[pos]:
         for p in self.lay_patches3[pos]:
             patches[p]['chemical_0'] +=  ph #self.lay_amount[self.agent]
@@ -1125,6 +1127,7 @@ SKY_BLUE = (0, 127, 255)
 WHITE = (255, 255, 255)
 RED = (190, 0, 0)
 PINK = (255, 20, 147)
+PURPLE = (128, 0, 145)
 GREEN = (0, 190, 0)
 YELLOW = (250, 250, 0)
 ORANGE = (255, 128, 0) 
@@ -1223,6 +1226,7 @@ class AntsVisualizer:
                 #elif idx == 1:
                 #    chem_type = "chemical_1"
 
+            chem_type = "chemical_0"
             chem = round(patches[p][chem_type]) * self.shade_strength
             pygame.draw.rect(
                 self.screen,
@@ -1269,13 +1273,14 @@ class AntsVisualizer:
                 learner_color = BLUE
             elif learner['flags'] != [0, 0, 0] and learner['flags'] != [0, 0, 1] and (actions[i] == 0 or actions[i] == 1):
                 learner_color = RED
-
-            if (learner['flags'] == [0, 0, 0] or learner['flags'] == [0, 0, 1]) and actions[i] == 2:
+            elif (learner['flags'] == [0, 0, 0] or learner['flags'] == [0, 0, 1]) and actions[i] == 2:
                 learner_color = RED
             elif (learner['flags'] == [0, 0, 0] or learner['flags'] == [0, 0, 1]) and actions[i] == 0:
                 learner_color = ORANGE
             elif (learner['flags'] == [0, 0, 0] or learner['flags'] == [0, 0, 1]) and actions[i] == 1:
                 learner_color = BLUE
+            else:
+                learner_color = PURPLE
 
             pygame.draw.circle(
                 self.screen,
@@ -1414,9 +1419,10 @@ def main():
         #"follow_mode": "prob",
         "wiggle_patches": 3,
         "lay_area": 1,
-        "lay_amount": 3.0,
+        "lay_amount": 5.0,
         "lay_amount_first": 1, 
-        "ph_decay": 1.0,
+        "lay_amount_min": 1.0,
+        "ph_decay": 0.9,
         "evaporation": 0.95,
         "obs_type": "paper",
         #"obs_type": "variation1",

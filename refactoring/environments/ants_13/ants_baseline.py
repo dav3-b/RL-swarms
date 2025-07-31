@@ -39,7 +39,7 @@ def plot(ep, rewards_x_ep, actions_x_ep, ticks, actions_name):
     }
     data.update({actions_name[i]: actions_x_ep[:, i] for i in range(actions_x_ep.shape[1])})
     df = pd.DataFrame(data)
-    df.to_csv("environments/ants_8/metrics.csv", sep=',', index=False)
+    df.to_csv("environments/ants_13/metrics.csv", sep=',', index=False)
 
     x = np.array([e for e in range(ep)])
     
@@ -50,7 +50,7 @@ def plot(ep, rewards_x_ep, actions_x_ep, ticks, actions_name):
     plt.scatter(x, rewards_x_ep, s=4, linewidth=1.0, color='#648FFF')
     plt.plot(x, y, label="mean", marker='x', markersize=.5, linewidth=.5, color='#DC267F')
     fig.tight_layout()
-    plt.savefig("environments/ants_8/Avg_Reward")
+    plt.savefig("environments/ants_13/Avg_Reward")
     
     avg_tick = ticks.mean()
     y = np.array([avg_tick for _ in range(ep)])
@@ -59,12 +59,25 @@ def plot(ep, rewards_x_ep, actions_x_ep, ticks, actions_name):
     plt.scatter(x, ticks, s=4, linewidth=1.0, color='#648FFF')
     plt.plot(x, y, label="mean", marker='x', markersize=.5, linewidth=.5, color='#DC267F')
     fig.tight_layout()
-    plt.savefig("environments/ants_8/Avg_Ticks")
+    plt.savefig("environments/ants_13/Avg_Ticks")
+
+    
+    fig = plt.figure(figsize=(10, 5), dpi=200)
+    for a in range(len(actions_name)):
+        plt.plot(
+            x,
+            actions_x_ep[:, a] * 100,
+            label=actions_name[a],
+        )
+    plt.yticks([i for i in range(0, 110, 10)])
+    plt.title("Baseline normalized actions")
+    plt.legend()
+    plt.savefig("environments/ants_13/Actions")
 
     
 def main():
     params = {
-        "learners": 50,
+        "learners": 40,
         "actions": [
             "random-walk",
             "move-toward-chemical-0",
@@ -78,9 +91,10 @@ def main():
         #"follow_mode": "prob",
         "wiggle_patches": 3,
         "lay_area": 1,
-        "lay_amount": 3.0,
+        "lay_amount": 5.0,
         "lay_amount_first": 1, 
-        "ph_decay": 1.0,
+        "lay_amount_min": 1.0,
+        "ph_decay": 0.9,
         "evaporation": 0.95,
         "obs_type": "paper",
         #"obs_type": "variation1",
@@ -117,7 +131,7 @@ def main():
     SEED = 0
     np.random.seed(SEED)
     env = Ants(SEED, **params)
-    env_vis = AntsVisualizer(env.W_pixels, env.H_pixels, **params_visualizer)
+    #env_vis = AntsVisualizer(env.W_pixels, env.H_pixels, **params_visualizer)
     ACTION_NUM = len(params["actions"])
     AGENTS_NUM = env.num_learners 
 
@@ -148,28 +162,29 @@ def main():
                 rewards[int(agent)] += round(reward, 4)
                 track_actions[action] += 1
                 actions[int(agent)] = action
-            env_vis.render(
-                env.patches,
-                env.food_pos_1,
-                env.food_pos_2,
-                env.food_pos_3,
-                env.nest_pos,
-                env.patches_food_1,
-                env.patches_food_2,
-                env.patches_food_3,
-                env.patches_nest,
-                env.learners,
-                env.fov,
-                env.fov_dirs,
-                env.ph_fov,
-                env.ph_fov_dirs,
-                env.min_coord,
-                env.max_coord,
-                actions
-            )
+            #env_vis.render(
+            #    env.patches,
+            #    env.food_pos_1,
+            #    env.food_pos_2,
+            #    env.food_pos_3,
+            #    env.nest_pos,
+            #    env.patches_food_1,
+            #    env.patches_food_2,
+            #    env.patches_food_3,
+            #    env.patches_nest,
+            #    env.learners,
+            #    env.fov,
+            #    env.fov_dirs,
+            #    env.ph_fov,
+            #    env.ph_fov_dirs,
+            #    env.min_coord,
+            #    env.max_coord,
+            #    actions
+            #)
             tick += 1
             #breakpoint()
         #avg_cluster = env.avg_cluster()
+        #print("Ticks: ", tick)
         ticks[ep - 1] = tick
         rewards_x_ep[ep - 1] = round((rewards.sum() / tick) / AGENTS_NUM, 4)
         actions_x_ep[ep - 1] = (track_actions / tick) / AGENTS_NUM
