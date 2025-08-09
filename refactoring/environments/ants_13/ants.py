@@ -547,6 +547,11 @@ class Ants(AECEnv):
             self._reset_flags(self.agent)
             self.first_drop[self.agent] = True
             return self.nest_reward
+        elif self.learners[self.agent]['pos'] in self.patches_nest and self.learners[self.agent]['flags'] == [0, 0, 0]:
+            #breakpoint()
+            return self.penalty * 5
+        #elif self.learners[self.agent]['pos'] not in self.patches_nest and self.learners[self.agent]['flags'] == [0, 0, 0]:
+        #    return 0.0
         else:
             return self.penalty
     
@@ -787,7 +792,7 @@ class Ants(AECEnv):
             #self.lay_amount[self.agent] = ph
             #breakpoint()
         else:
-            ph = 0.0 #self.lay_amount_min
+            ph = self.lay_amount_min #0.0 
 
         self.lay_amount[self.agent] = ph 
         

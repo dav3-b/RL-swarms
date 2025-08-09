@@ -81,9 +81,9 @@ class Ants(AECEnv):
         self.diffuse_radius = kwargs['diffuse_radius']
         self.lay_area = kwargs['lay_area']
         
-        self.lay_amount_init = kwargs['lay_amount']
-        self.lay_amount = np.array([self.lay_amount_init for _ in range(self.num_learners)])
-        self.lay_amount_min = 1.0
+        self.lay_amount_food = kwargs['lay_amount']
+        self.lay_amount = np.array([self.lay_amount_food for _ in range(self.num_learners)])
+        self.lay_amount_min = kwargs['lay_amount_min']
         self.lay_amount_first = kwargs['lay_amount_first']
         self.first_drop = np.array([True for _ in range(self.num_learners)])
         
@@ -187,9 +187,10 @@ class Ants(AECEnv):
         #self.nest_pos = (self.coords[0][0] + self.patch_size * int(self.W * 3/4), self.coords[0][1] + self.patch_size * int(self.H * 3/4)) 
         self.nest_pos = (self.coords[0][0] + self.patch_size * int(self.W * 1/2), self.coords[0][1] + self.patch_size * int(self.H * 1/2)) 
         
-        self.possible_states = self.sniff_patches**2 * 2**2
+        self.possible_states = (self.sniff_patches + self.sniff_patches**2) * 2**2
+        self.map_vector = np.array([i for i in range(0, self.sniff_patches * 2**2, 4)])
         self.map_matrix = np.array(
-            [i for i in range(0, self.possible_states, 4)]
+            [i for i in range(self.sniff_patches * 2**2, self.possible_states, 4)]
         ).reshape(self.sniff_patches, self.sniff_patches)
         
         # create learners turtle
@@ -547,6 +548,11 @@ class Ants(AECEnv):
             self._reset_flags(self.agent)
             self.first_drop[self.agent] = True
             return self.nest_reward
+        elif self.learners[self.agent]['pos'] in self.patches_nest and self.learners[self.agent]['flags'] == [0, 0, 0]:
+            #breakpoint()
+            return self.penalty * 5
+        #elif self.learners[self.agent]['pos'] not in self.patches_nest and self.learners[self.agent]['flags'] == [0, 0, 0]:
+        #    return 0.0
         else:
             return self.penalty
     
@@ -747,10 +753,7 @@ class Ants(AECEnv):
         #if np.any((f < self.min_coord[0]) | (f > self.max_coord[0])):
         x = np.any((f < self.min_coord[0]) | (f > self.max_coord[0]), axis=-1)
         y = np.where(x == False)[0]
-        try:
-            idx = y[obs[y].argmax()]
-        except:
-            breakpoint()
+        idx = y[obs[y].argmax()]
         #z = np.where(y == idx)[0]
         ph_pos = tuple(f[idx])
         ph_val = obs[idx]
@@ -779,19 +782,21 @@ class Ants(AECEnv):
 
     def lay_pheromone(self, patches, pos):
         # Bisogna calcolarlo per ogni agente
+        #breakpoint()
         
         if self.first_drop[self.agent] and (self.learners[self.agent]['flags'] == [1, 0, 0] or self.learners[self.agent]['flags'] == [1, 0, 1]):
             #breakpoint()
-            ph = self.lay_amount_init * self.lay_amount_first
+            ph = self.lay_amount_food * self.lay_amount_first
             self.first_drop[self.agent] = False 
         elif self.learners[self.agent]['flags'] == [1, 0, 0] or self.learners[self.agent]['flags'] == [1, 0, 1]:
             ph = max(self.lay_amount[self.agent] * self.ph_decay, self.lay_amount_min)
-            self.lay_amount[self.agent] = ph
+            #self.lay_amount[self.agent] = ph
             #breakpoint()
         else:
-            ph = self.lay_amount_init
-            self.lay_amount[self.agent] = ph 
+            ph = self.lay_amount_min #0.0 
 
+        self.lay_amount[self.agent] = ph 
+        
         #for p in self.lay_patches[pos]:
         for p in self.lay_patches3[pos]:
             patches[p]['chemical_0'] +=  ph #self.lay_amount[self.agent]
@@ -811,8 +816,8 @@ class Ants(AECEnv):
                     max_ph_dir,
                     self.learners[self.agent]
                 )
-            #else:
-            #    self.do_action0()
+            else:
+                self.do_action0()
         elif self.obs_type == "variation1":
             pass
     
@@ -829,8 +834,8 @@ class Ants(AECEnv):
                     max_ph_dir,
                     self.learners[self.agent]
                 )
-            #else:
-            #    self.do_action0()
+            else:
+                self.do_action0()
         elif self.obs_type == "variation1":
             pass
     
@@ -848,8 +853,8 @@ class Ants(AECEnv):
                     max_ph_dir,
                     self.learners[self.agent]
                 )
-            #else:
-            #    self.do_action0()
+            else:
+                self.do_action0()
         elif self.obs_type == "variation1":
             pass
 
@@ -1105,17 +1110,25 @@ class Ants(AECEnv):
         food = int(obs[-2])
         nest = int(obs[-1])
         
-        if np.unique(obs_ph_0).shape[0] == 1:
-            obs_ph_0_id = np.random.randint(self.sniff_patches)
-        else:
-            obs_ph_0_id  = obs_ph_0.argmax()
-        
-        if np.unique(obs_ph_1).shape[0] == 1:
-            obs_ph_1_id = np.random.randint(self.sniff_patches)
-        else:
-            obs_ph_1_id  = obs_ph_1.argmax()
+        if np.all(obs_ph_0 < self.sniff_threshold):
+            if np.unique(obs_ph_1).shape[0] == 1:
+                obs_ph_1_id = np.random.randint(self.sniff_patches)
+            else:
+                obs_ph_1_id  = obs_ph_1.argmax()
 
-        obs_id = self.map_matrix[obs_ph_0_id, obs_ph_1_id] + (food * 2) + nest
+            obs_id = self.map_vector[obs_ph_1_id] + (food * 2) + nest
+        else:
+            if np.unique(obs_ph_0).shape[0] == 1:
+                obs_ph_0_id = np.random.randint(self.sniff_patches)
+            else:
+                obs_ph_0_id  = obs_ph_0.argmax()
+            
+            if np.unique(obs_ph_1).shape[0] == 1:
+                obs_ph_1_id = np.random.randint(self.sniff_patches)
+            else:
+                obs_ph_1_id  = obs_ph_1.argmax()
+
+            obs_id = self.map_matrix[obs_ph_0_id, obs_ph_1_id] + (food * 2) + nest
         
         return obs_id
     
@@ -1128,6 +1141,7 @@ SKY_BLUE = (0, 127, 255)
 WHITE = (255, 255, 255)
 RED = (190, 0, 0)
 PINK = (255, 20, 147)
+PURPLE = (128, 0, 145)
 GREEN = (0, 190, 0)
 YELLOW = (250, 250, 0)
 ORANGE = (255, 128, 0) 
@@ -1273,13 +1287,14 @@ class AntsVisualizer:
                 learner_color = BLUE
             elif learner['flags'] != [0, 0, 0] and learner['flags'] != [0, 0, 1] and (actions[i] == 0 or actions[i] == 1):
                 learner_color = RED
-
-            if (learner['flags'] == [0, 0, 0] or learner['flags'] == [0, 0, 1]) and actions[i] == 2:
+            elif (learner['flags'] == [0, 0, 0] or learner['flags'] == [0, 0, 1]) and actions[i] == 2:
                 learner_color = RED
             elif (learner['flags'] == [0, 0, 0] or learner['flags'] == [0, 0, 1]) and actions[i] == 0:
                 learner_color = ORANGE
             elif (learner['flags'] == [0, 0, 0] or learner['flags'] == [0, 0, 1]) and actions[i] == 1:
                 learner_color = BLUE
+            else:
+                learner_color = PURPLE
 
             pygame.draw.circle(
                 self.screen,
@@ -1418,9 +1433,10 @@ def main():
         #"follow_mode": "prob",
         "wiggle_patches": 3,
         "lay_area": 1,
-        "lay_amount": 3.0,
+        "lay_amount": 5.0,
         "lay_amount_first": 1, 
-        "ph_decay": 1.0,
+        "lay_amount_min": 1.0,
+        "ph_decay": 0.9,
         "evaporation": 0.95,
         "obs_type": "paper",
         #"obs_type": "variation1",
