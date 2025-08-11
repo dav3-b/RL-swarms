@@ -816,8 +816,8 @@ class Ants(AECEnv):
                     max_ph_dir,
                     self.learners[self.agent]
                 )
-            else:
-                self.do_action0()
+            #else:
+            #    self.do_action0()
         elif self.obs_type == "variation1":
             pass
     
@@ -834,8 +834,8 @@ class Ants(AECEnv):
                     max_ph_dir,
                     self.learners[self.agent]
                 )
-            else:
-                self.do_action0()
+            #else:
+            #    self.do_action0()
         elif self.obs_type == "variation1":
             pass
     
@@ -853,8 +853,8 @@ class Ants(AECEnv):
                     max_ph_dir,
                     self.learners[self.agent]
                 )
-            else:
-                self.do_action0()
+            #else:
+            #    self.do_action0()
         elif self.obs_type == "variation1":
             pass
 
