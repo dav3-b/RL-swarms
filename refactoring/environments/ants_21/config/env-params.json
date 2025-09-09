@@ -19,6 +19,7 @@
     "evaporation": 0.95,
     "obs_type": "paper",
     "food_quantity": 5,
+    "reward_type": 2,
     "food_reward": 1,
     "nest_reward": 10,
     "penalty": -0.1,

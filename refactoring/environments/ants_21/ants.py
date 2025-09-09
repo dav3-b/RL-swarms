@@ -93,6 +93,8 @@ class Ants(AECEnv):
         self.MAX_TICKS = kwargs['max_episode_ticks']
     
         self.food_quantity = kwargs['food_quantity']
+        
+        self.reward_type = kwargs['reward_type']
         self.food_reward = kwargs['food_reward']
         self.nest_reward = kwargs['nest_reward']
         self.penalty = kwargs['penalty']
@@ -557,8 +559,10 @@ class Ants(AECEnv):
         # agents average reward 
         return np.array(rewards).mean()
     
-    def _get_global_reward_2(self):
-        pass
+    def _get_global_reward_2(self, rewards, agent):
+        current_rewards = rewards.copy()
+        _ = current_rewards.pop(int(agent))
+        return np.array(current_rewards).mean()
 
     def distance_to_goal(self):
         agent_pos = self.learners[self.agent]['pos']
@@ -933,16 +937,22 @@ class Ants(AECEnv):
         else:
             self.do_action0()
 
-    def _save_rewards(self):
+    def _save_rewards_1(self):
         rewards = [self.rewards_cust[self.agent_name_mapping[ag]][-1] for ag in self.agents]
         global_reward = self._get_global_reward_1(rewards)
         
         for ag in self.agents:
             current_reward = self.rewards_cust[self.agent_name_mapping[ag]][-1]
             self.rewards[ag] = current_reward + round(global_reward, 2)
+    
+    def _save_rewards_2(self):
+        rewards = [self.rewards_cust[self.agent_name_mapping[ag]][-1] for ag in self.agents]
         
-        breakpoint()
-
+        for ag in self.agents:
+            current_reward = self.rewards_cust[self.agent_name_mapping[ag]][-1]
+            global_reward = self._get_global_reward_2(rewards, ag)
+            self.rewards[ag] = current_reward + round(global_reward, 2)
+        
     def _diffuse_and_evaporate(self, patches):
         """
         This diffuse method use a gaussian filter for the process.
@@ -1024,7 +1034,12 @@ class Ants(AECEnv):
         )
 
         if self._agent_selector.is_last():
-            self._save_rewards()
+            if self.reward_type == 1:
+                self._save_rewards_1()
+            elif self.reward_type == 2:
+                self._save_rewards_2()
+            else:
+                raise ValueError("Unknown Reward Type!")
 
             self.patches = self._diffuse_and_evaporate(self.patches)
             self.current_ticks += 1
@@ -1447,6 +1462,7 @@ def main():
         "obs_type": "paper",
         #"obs_type": "variation1",
         "food_quantity": 3,
+        "reward_type": 2,
         "food_reward": 1,
         "nest_reward": 10,
         "penalty": -0.1,
