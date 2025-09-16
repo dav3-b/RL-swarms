@@ -21,7 +21,7 @@
     "food_quantity": 5,
     "food_reward": 1,
     "nest_reward": 10,
-    "penalty": -0.1,
+    "penalty": -0.5,
     "max_episode_ticks": 1000,
     "W": 31,
     "H": 31,

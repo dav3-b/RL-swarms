@@ -546,6 +546,23 @@ class Ants(AECEnv):
         dist = round(np.sqrt(x**2 + y**2), 3) # Scalo per la grandezza della patch
         return dist
     """
+    def _check_rewards(self):
+        if not self.patches_food_1 and not self.patches_food_1_empty:
+            breakpoint()
+            self.food_rewards_grid -= self.food_rewards_grid_1
+            self.patches_food_1_empty = True
+        
+        if not self.patches_food_2 and not self.patches_food_2_empty:
+            breakpoint()
+            self.food_rewards_grid -= self.food_rewards_grid_2
+            self.patches_food_2_empty = True
+        
+        if not self.patches_food_3 and not self.patches_food_3_empty:
+            breakpoint()
+            self.food_rewards_grid -= self.food_rewards_grid_3
+            self.patches_food_3_empty = True
+
+    
     def _get_reward(self):
         if self.learners[self.agent]['flags'] == [1, 0, 0]:
             #breakpoint() 
@@ -559,28 +576,36 @@ class Ants(AECEnv):
                     self.patches_food_2.remove(self.learners[self.agent]['pos'])
                 elif self.learners[self.agent]['pos'] in self.patches_food_3:
                     self.patches_food_3.remove(self.learners[self.agent]['pos'])
-            
+
             agent_pos = self.learners[self.agent]['pos']
-            return self.food_reward + round(self.food_rewards_grid[self.pos_to_idx[agent_pos]], 2) 
+            reward = self.food_reward + round(self.food_rewards_grid[self.pos_to_idx[agent_pos]], 2)  
+            self._check_rewards()
+            
+            return reward
         elif self.learners[self.agent]['flags'] == [1, 0, 1]:
             #breakpoint() 
             agent_pos = self.learners[self.agent]['pos']
+            reward = round(self.nest_rewards_grid[self.pos_to_idx[agent_pos]], 2)
 
-            return round(self.nest_rewards_grid[self.pos_to_idx[agent_pos]], 2)
+            return reward
         elif self.learners[self.agent]['flags'] == [1, 1, 1]:
             #breakpoint() 
             self._reset_flags(self.agent)
             self.first_drop[self.agent] = True
             agent_pos = self.learners[self.agent]['pos']
+            reward = self.nest_reward + round(self.nest_rewards_grid[self.pos_to_idx[agent_pos]], 2)
             
-            return self.nest_reward + round(self.nest_rewards_grid[self.pos_to_idx[agent_pos]], 2)
+            return reward
         #elif self.learners[self.agent]['flags'] == [0, 0, 0]:
         #    agent_pos = self.learners[self.agent]['pos']
+        #elif self.learners[self.agent]['pos'] in self.patches_nest and self.learners[self.agent]['flags'] == [0, 0, 0]:
+        #    return self.penalty 
         else:
             #breakpoint() 
             agent_pos = self.learners[self.agent]['pos']
+            reward = round(self.food_rewards_grid[self.pos_to_idx[agent_pos]], 2)
 
-            return round(self.food_rewards_grid[self.pos_to_idx[agent_pos]], 2)
+            return reward
 
     
     def _get_obs2(self, agent):
@@ -976,8 +1001,8 @@ class Ants(AECEnv):
         #    self.do_action2()
         elif action == 2:   # Follow pheromone 1 and drop pheromone 0
             self.do_action3()
-        elif action == 3:   # Avoid pheromone 1
-            self.do_action4()
+        #elif action == 4:   # Avoid pheromone 1
+        #    self.do_action4()
         else:
             raise ValueError("Action out of range!")
 
@@ -1000,7 +1025,7 @@ class Ants(AECEnv):
         self._accumulate_rewards()
 
         self._check_termination()
-
+        
     def _get_dense_rewards(self, food_pos, area, val):
         food_reward_grid = np.zeros((self.W, self.H))
 
@@ -1043,10 +1068,13 @@ class Ants(AECEnv):
 
         tmp = self._find_neighbours(1)
         self.patches_food_1 = tmp[self.food_pos_1]
+        self.patches_food_1_empty = False
         tmp = self._find_neighbours(1)
         self.patches_food_2 = tmp[self.food_pos_2]
+        self.patches_food_2_empty = False
         tmp = self._find_neighbours(1)
         self.patches_food_3 = tmp[self.food_pos_3]
+        self.patches_food_3_empty = False
         tmp = self._find_neighbours(1)
         self.patches_nest = tmp[self.nest_pos]
         
@@ -1059,10 +1087,10 @@ class Ants(AECEnv):
         food_pos.extend(self.patches_food_3)
         self.food_counts = {p: self.food_quantity for p in food_pos}
 
-        food_rewards_grid_1 = self._get_dense_rewards(self.patches_food_1, 6.0, 2.5)
-        food_rewards_grid_2 = self._get_dense_rewards(self.patches_food_2, 2.5, 0.5)
-        food_rewards_grid_3 = self._get_dense_rewards(self.patches_food_3, 4.5, 1.5)
-        self.food_rewards_grid = food_rewards_grid_1 + food_rewards_grid_2 + food_rewards_grid_3
+        self.food_rewards_grid_1 = self._get_dense_rewards(self.patches_food_1, 5.25, 2.0)
+        self.food_rewards_grid_2 = self._get_dense_rewards(self.patches_food_2, 2.7, 0.6)
+        self.food_rewards_grid_3 = self._get_dense_rewards(self.patches_food_3, 3.25, 0.85)
+        self.food_rewards_grid = self.food_rewards_grid_1 + self.food_rewards_grid_2 + self.food_rewards_grid_3
         self.nest_rewards_grid = self._get_dense_rewards(self.patches_nest, 6.0, 2.5)
 
         # patches-own [chemical] - amount of pheromone in the patch
@@ -1481,13 +1509,13 @@ def main():
         "wiggle_patches": 3,
         "show_ph_0_view": False,
         "show_ph_1_view": False,
-        "show_food_rewards": False,
+        "show_food_rewards": True,
         "show_nest_rewards": False
     }
 
     from tqdm import tqdm
 
-    EPISODES = 1
+    EPISODES = 2
     SEED = 0
     np.random.seed(SEED)
     env = Ants(SEED, **params)
