@@ -548,17 +548,14 @@ class Ants(AECEnv):
     """
     def _check_rewards(self):
         if not self.patches_food_1 and not self.patches_food_1_empty:
-            breakpoint()
             self.food_rewards_grid -= self.food_rewards_grid_1
             self.patches_food_1_empty = True
         
         if not self.patches_food_2 and not self.patches_food_2_empty:
-            breakpoint()
             self.food_rewards_grid -= self.food_rewards_grid_2
             self.patches_food_2_empty = True
         
         if not self.patches_food_3 and not self.patches_food_3_empty:
-            breakpoint()
             self.food_rewards_grid -= self.food_rewards_grid_3
             self.patches_food_3_empty = True
 
