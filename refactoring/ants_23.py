@@ -8,7 +8,7 @@ import argparse
 import numpy as np
 import random
 
-from environments.ants_22.ants import Ants
+from environments.ants_23.ants import Ants
 from agents.IQLearning import iql_3 as iql
 
 def read_params(params_path: str, learning_params_path: str, visualizer_params_path: str, logger_params_path):
@@ -81,7 +81,7 @@ def main(args):
 
     env = Ants(args.random_seed, **params)
     if args.render:
-        from environments.ants_22.ants import AntsVisualizer
+        from environments.ants_23.ants import AntsVisualizer
         env_vis = AntsVisualizer(env.W_pixels, env.H_pixels, **v_params)
     else:
         env_vis = None
@@ -200,14 +200,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "--params_path",
         type=str,
-        default="environments/ants_22/config/env-params.json",
+        default="environments/ants_23/config/env-params.json",
         required=False
     )
 
     parser.add_argument(
         "--visualizer_params_path",
         type=str,
-        default="environments/ants_22/config/env_visualizer-params.json",
+        default="environments/ants_23/config/env_visualizer-params.json",
         required=False
     )
     

@@ -85,6 +85,7 @@ def train(
         epsilon_min:float,
         print_metrics,
         logger,
+        logger2,
         visualizer=None
     ):
     
@@ -93,7 +94,7 @@ def train(
     old_a = {}
     #actions = [4, 5]
     AGENTS_NUM = env.num_learners
-
+    
     # TRAINING
     print("Start training...\n")
 
@@ -103,14 +104,14 @@ def train(
         
         while not env.done: 
             actions = np.array([-1 for _ in range(AGENTS_NUM)], dtype=np.int8)
+            nest = []
+            food = []
             for agent in env.agent_iter(max_iter=AGENTS_NUM):
                 obs, reward, _, _, _ = env.last(agent)
                 state = env.convert_observation(obs)
                 masked_actions = env.mask_actions(obs)
 
                 if ep == 1 and tick == 1:
-                    #action = env.action_space(agent).sample()
-                    #action = np.random.randint(0, n_actions)
                     action = np.random.choice(masked_actions, 1).item()
                 else:
                     # QTable update
@@ -121,20 +122,17 @@ def train(
                     
                     # next_action
                     if random.uniform(0, 1) < epsilon:
-                        #action = np.random.randint(0, n_actions)
-                        #action = env.action_space(agent).sample()
                         action = np.random.choice(masked_actions, 1).item()
                     else:
                         idx = np.argmax(qtable[int(agent)][state][masked_actions])
                         action = masked_actions[idx]
 
-                #if env.learners[int(agent)]["mode"] == 's':
-                #    env.step(scatter_actions[action].item())
-                #else:
-                #    env.step(action)
                 env.step(action)
+                
                 actions[int(agent)] = action
-
+                nest.append(bool(int(obs[-1])))
+                food.append(bool(int(obs[-2])))
+                
                 old_s[agent] = state
                 old_a[agent] = action
 
@@ -167,6 +165,13 @@ def train(
                     actions
                 )
 
+            if ep % 500 == 0:
+                data = [ep, tick]
+                data.extend(actions.tolist())
+                data.extend(nest)
+                data.extend(food)
+                logger2.load_value(data)
+            
             tick += 1
 
         if decay_type == "log":
@@ -193,6 +198,7 @@ def train(
                 print(" - epsilon: ", eps)
 
     logger.empty_table()
+    logger2.empty_table()
     env.close()
     if visualizer != None:
         visualizer.close()
