@@ -929,13 +929,17 @@ class Ants(AECEnv):
         else:
             self.do_action0()
     
-    def _get_global_reward(self, rewards):
+    def _get_global_reward_1(self, rewards):
         # agents average reward 
         return np.array(rewards).mean()
+    
+    def _get_global_reward_2(self, rewards):
+        # agents average reward 
+        return min(rewards) #np.array(rewards).min()
 
     def _save_rewards(self):
         rewards = [self.rewards_cust[self.agent_name_mapping[ag]][-1] for ag in self.agents]
-        global_reward = self._get_global_reward(rewards)
+        global_reward = self._get_global_reward_2(rewards)
         
         for ag in self.agents:
             ind_reward = self.rewards_cust[self.agent_name_mapping[ag]][-1]
@@ -1038,14 +1042,14 @@ class Ants(AECEnv):
 
         self._check_termination()
         
-    def _get_dense_rewards(self, food_pos, val, area, radius=None):
-        food_reward_grid = np.zeros((self.W, self.H))
+    def _get_dense_rewards(self, pos, val, area, radius=None):
+        reward_grid = np.zeros((self.W, self.H))
 
-        for p in food_pos:
-            food_reward_grid[self.pos_to_idx[p]] = val  
+        for p in pos:
+            reward_grid[self.pos_to_idx[p]] = val  
         
-        food_reward_grid = gaussian_filter(food_reward_grid, sigma=area, radius=radius, mode='constant')
-        return food_reward_grid
+        reward_grid = gaussian_filter(reward_grid, sigma=area, radius=radius, mode='constant')
+        return reward_grid
 
 
     def reset(self, seed=None, return_info=True, options=None):
@@ -1594,7 +1598,7 @@ def main():
                 env.max_coord,
                 actions
             )
-            breakpoint()
+            #breakpoint()
             ticks += 1
 
     print("Ticks: ", ticks)
