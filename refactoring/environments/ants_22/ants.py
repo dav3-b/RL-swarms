@@ -935,11 +935,15 @@ class Ants(AECEnv):
     
     def _get_global_reward_2(self, rewards):
         # agents average reward 
-        return min(rewards) #np.array(rewards).min()
+        return min(rewards) 
+    
+    def _get_global_reward_3(self, rewards):
+        # agents average reward 
+        return np.array(rewards).sum()
 
     def _save_rewards(self):
         rewards = [self.rewards_cust[self.agent_name_mapping[ag]][-1] for ag in self.agents]
-        global_reward = self._get_global_reward_2(rewards)
+        global_reward = self._get_global_reward_3(rewards)
         
         for ag in self.agents:
             ind_reward = self.rewards_cust[self.agent_name_mapping[ag]][-1]
