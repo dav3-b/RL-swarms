@@ -118,6 +118,9 @@ class Logger:
         metrics = ["Episode", "Tick"]
 
         metrics.append("Avg reward X episode") 
+        for l in range(params["learners"]):
+            metrics.append(f"agent-{l}_reward")
+
         for a in params["actions"]:
             metrics.append(a)
         for l in range(params["learners"]):

@@ -177,12 +177,13 @@ def train(
         if decay_type == "log":
             epsilon = max(epsilon * decay, epsilon_min)
         elif decay_type == "linear":
-            epsilon = max(epsilon - (1 - decay), epsilon_min)
+            epsilon = max(epsilon - decay, epsilon_min)
         
         if ep % train_log_every == 0:
             value = [ep, tick]
             avg_rew = round((sum(reward_dict[str(ep)].values()) / tick) / params["learners"], 4)
             value.append(avg_rew)
+            value.extend(np.array(list(reward_dict[str(ep)].values())).round(2).tolist())
             value.extend(list(actions_dict[str(ep)].values()))
             tmp = [list(v.values()) for v in action_dict[str(ep)].values()]
             value.extend(list(itertools.chain(*tmp)))

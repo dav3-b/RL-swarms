@@ -943,7 +943,7 @@ class Ants(AECEnv):
 
     def _save_rewards(self):
         rewards = [self.rewards_cust[self.agent_name_mapping[ag]][-1] for ag in self.agents]
-        global_reward = self._get_global_reward_3(rewards)
+        global_reward = self._get_global_reward_1(rewards)
         
         for ag in self.agents:
             ind_reward = self.rewards_cust[self.agent_name_mapping[ag]][-1]

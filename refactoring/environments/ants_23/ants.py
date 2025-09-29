@@ -668,12 +668,14 @@ class Ants(AECEnv):
 
         reward = self._get_reward()
         
-        food = bool(int(obs[-2]))
-        nest = bool(int(obs[-1]))
+        #food = bool(int(obs[-2]))
+        #nest = bool(int(obs[-1]))
+        #if np.any(obs[:self.sniff_patches] >= self.sniff_threshold) and action == 1 and not food:
+        #    reward += self.ph_reward
+        #elif food and action == 3 and not nest:
+        #    reward += self.ph_reward
         
-        if np.any(obs[:self.sniff_patches] >= self.sniff_threshold) and action == 1 and not food:
-            reward += self.ph_reward
-        elif food and action == 3 and not nest:
+        if action == 1 or action == 3:
             reward += self.ph_reward
 
         rewards_cust[self.agent].append(reward)
