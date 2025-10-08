@@ -958,14 +958,22 @@ class Ants(AECEnv):
     
     def _get_global_reward_5(self, agent):
         return (self.food_x_agent[agent] / self.current_ticks) * 1e3
+
+    def _get_global_reward_6(self):
+        return (self.food_x_agent.sum() / self.current_ticks) * 1e2
+        #return (self.food_x_agent.sum() / self.current_ticks) * 1e1
+    
+    def _get_global_reward_7(self):
+        return (self.food_x_agent.mean() / self.current_ticks) * 1e3
     
     def _save_rewards(self):
         #rewards = [self.rewards_cust[self.agent_name_mapping[ag]][-1] for ag in self.agents]
         #global_reward = self._get_global_reward_1(rewards)
+        global_reward = self._get_global_reward_6()
         
         for ag in self.agents:
             ind_reward = self.rewards_cust[self.agent_name_mapping[ag]][-1]
-            global_reward = self._get_global_reward_5(self.agent_name_mapping[ag])
+            #global_reward = self._get_global_reward_5(self.agent_name_mapping[ag])
             reward = (1 - self.col_rew_weight) * ind_reward + self.col_rew_weight * global_reward
             self.rewards[ag] = round(reward, 2)
 
