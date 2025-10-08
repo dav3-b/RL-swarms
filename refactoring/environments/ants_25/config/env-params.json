@@ -22,7 +22,7 @@
     "food_quantity": 5,
     "reward_type": 0,
     "collective_reward_weight": 0.5,
-    "food_reward": 1,
+    "food_reward": 5,
     "nest_reward": 10,
     "penalty": -0.1,
     "max_episode_ticks": 1000,
