@@ -553,8 +553,8 @@ class Ants(AECEnv):
         elif self.learners[self.agent]['pos'] in self.patches_nest and self.learners[self.agent]['flags'] == [0, 0, 0]:
             #breakpoint()
             return self.penalty * 5
-        #elif self.learners[self.agent]['pos'] not in self.patches_nest and self.learners[self.agent]['flags'] == [0, 0, 0]:
-        #    return 0.0
+        elif self.learners[self.agent]['pos'] not in self.patches_nest and self.learners[self.agent]['flags'] == [0, 0, 0]:
+            return 0.0
         else:
             return self.penalty
     
@@ -957,14 +957,13 @@ class Ants(AECEnv):
         return self.food_x_agent[agent]
     
     def _get_global_reward_5(self, agent):
-        return (self.food_x_agent[agent] / self.current_ticks) * 1e3
+        return (self.food_x_agent[agent] / self.current_ticks) #* 1e3
 
     def _get_global_reward_6(self):
-        return (self.food_x_agent.sum() / self.current_ticks) * 1e2
-        #return (self.food_x_agent.sum() / self.current_ticks) * 1e1
+        return (self.food_x_agent.sum() / self.current_ticks) #* 1e2
     
     def _get_global_reward_7(self):
-        return (self.food_x_agent.mean() / self.current_ticks) * 1e3
+        return (self.food_x_agent.mean() / self.current_ticks) #* 1e3
     
     def _save_rewards(self):
         #rewards = [self.rewards_cust[self.agent_name_mapping[ag]][-1] for ag in self.agents]
@@ -1133,11 +1132,15 @@ class Ants(AECEnv):
         food_pos.extend(self.patches_food_3)
         self.food_counts = {p: self.food_quantity for p in food_pos}
 
-        self.food_rewards_grid_1 = self._get_dense_rewards(self.patches_food_1, 30.0, 4.0)
-        self.food_rewards_grid_2 = self._get_dense_rewards(self.patches_food_2, 10.0, 2.0)
-        self.food_rewards_grid_3 = self._get_dense_rewards(self.patches_food_3, 20.0, 3.0)
+        #self.food_rewards_grid_1 = self._get_dense_rewards(self.patches_food_1, 30.0, 4.0)
+        #self.food_rewards_grid_2 = self._get_dense_rewards(self.patches_food_2, 10.0, 2.0)
+        #self.food_rewards_grid_3 = self._get_dense_rewards(self.patches_food_3, 20.0, 3.0)
+        self.food_rewards_grid_1 = self._get_dense_rewards(self.patches_food_1, 2.0, 5.25)
+        self.food_rewards_grid_2 = self._get_dense_rewards(self.patches_food_2, 0.6, 2.7)
+        self.food_rewards_grid_3 = self._get_dense_rewards(self.patches_food_3, 0.85, 3.25)
         self.food_rewards_grid = self.food_rewards_grid_1 + self.food_rewards_grid_2 + self.food_rewards_grid_3
-        self.nest_rewards_grid = self._get_dense_rewards(self.patches_nest, 40.0, 5.0)
+        #self.nest_rewards_grid = self._get_dense_rewards(self.patches_nest, 40.0, 5.0)
+        self.nest_rewards_grid = self._get_dense_rewards(self.patches_nest, 2.5, 6.0)
 
         self.food_x_agent = np.zeros(self.num_learners, dtype=np.uint16)
 
