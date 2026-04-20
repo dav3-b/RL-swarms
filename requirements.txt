@@ -2,5 +2,7 @@ gymnasium
 pygame
 stable-baselines3
 pettingzoo
-tqdm
+tdqm
 opencv-python
+neat-python
+numpy

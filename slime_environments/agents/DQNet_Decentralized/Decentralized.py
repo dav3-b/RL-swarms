@@ -252,7 +252,7 @@ def main(args):
     if args.positional_encoding:
         n_observations = 100
     else:
-        n_observations = 51
+        n_observations = 123
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"[INFO] Device selected: {device}")

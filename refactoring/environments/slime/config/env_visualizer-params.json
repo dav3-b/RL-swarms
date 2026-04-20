@@ -7,5 +7,8 @@
     "gui": true,
     "sniff_threshold": 0.9,
     "PATCH_SIZE": 20,
-    "TURTLE_SIZE": 16
+    "TURTLE_SIZE": 16,
+    "show_dirs_view": false,
+    "wiggle_patches": 3,
+    "show_ph_view": false
 }
