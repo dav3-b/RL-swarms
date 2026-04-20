@@ -3,6 +3,8 @@ from slime_environments.environments.SlimeEnvMultiAgent import Slime
 
 import sys
 import os
+from tqdm import tqdm
+import datetime
 
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
@@ -52,10 +54,10 @@ def train(env,
     print("Start training...")
     
     old_s = {}  # DOC old state for each agent {agent: old_state}
-    for ep in range(1, train_episodes + 1):
+    for ep in tqdm(range(1, train_episodes + 1), desc="EPISODES", colour='red', position=0, leave=False):
         env.reset()
         
-        for tick in range(1, params['episode_ticks'] + 1):
+        for tick in tqdm(range(1, params['episode_ticks'] + 1), desc="TICKS", colour='green', position=1, leave=False):
             for agent in env.agent_iter(max_iter=params['learner_population']):
                 cur_state, reward, _, _, _ = env.last(agent)
                 cur_s = utils.state_to_int_map(cur_state)
@@ -105,6 +107,7 @@ def train(env,
                 
                 avg_rew /= params['learner_population']
                 f.write(f"{avg_rew}\n")
+            print(f"\tavg reward: {avg_rew}")
 
     #print(json.dumps(cluster_dict, indent=2))
     print("Training finished!\n")
@@ -122,12 +125,12 @@ def eval(env,
     cluster_dict = {}
     print("Start testing...")
     
-    for ep in range(1, test_episodes + 1):
+    for ep in tqdm(range(1, test_episodes + 1), desc="EPISODES", colour='red'):
         env.reset()
-        for tick in range(1, params['episode_ticks']+1):
+        for _ in tqdm(range(1, params['episode_ticks']+1), desc="TICKS", colour='green'):
             for agent in env.agent_iter(max_iter=params['learner_population']):
-                state, _, _, _ = env.last(agent)
-                s = utils.state_to_int_map(state.observe())
+                state, _, _, _, _ = env.last(agent)
+                s = utils.state_to_int_map(state)
 
                 if random.uniform(0, 1) < epsilon:
                     # action = np.random.randint(0, 2)
@@ -164,10 +167,16 @@ def main(args):
     output_dir, output_file, alpha, gamma, epsilon, decay, train_episodes, train_log_every, test_episodes, test_log_every = utils.setup(True, curdir, params, l_params)
 
     qtable, actions_dict, action_dict, reward_dict, cluster_dict = create_agent(params, l_params,train_episodes)
-    
+
+    train_start = datetime.datetime.now()
     env, qtable = train(env, params, qtable, actions_dict, action_dict, reward_dict, cluster_dict, train_episodes, train_log_every, alpha, gamma, decay, epsilon, output_file)
-    
+    train_end = datetime.datetime.now()
+    print(f"Training time: {train_end - train_start}")
+
+    test_start = datetime.datetime.now()
     eval(env, params, test_episodes, qtable, test_log_every, epsilon)
+    test_end = datetime.datetime.now()
+    print(f"Testing time: {test_end - test_start}")
 
 
 if __name__ == "__main__":

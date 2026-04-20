@@ -4,3 +4,6 @@
 **/models/*
 /.venv
 /venv
+build/
+dist/
+rl_swarms.egg-info/
